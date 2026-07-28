@@ -1,18 +1,18 @@
-<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Architecture — Image Search at the Edge</title><style>body{max-width:760px;margin:40px auto;padding:0 20px;font-family:-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.7;color:#2C2C2A;}
-table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0;}th,td{border:1px solid #D3D1C7;padding:6px 10px;text-align:left;}
-code{background:#F1EFE8;padding:1px 5px;border-radius:4px;font-size:90%;}h1{font-size:24px;}h2{font-size:19px;margin-top:34px;}
-p[align=center] svg,p svg{max-width:100%;height:auto;}
-@media(prefers-color-scheme:dark){body{background:#1e1e1c;color:#D3D1C7;}code{background:#333;}th,td{border-color:#444441;}}</style></head><body><h1>Architecture — Image Search at the Edge</h1>
-<p>Image Search at the Edge is an offline-first, multimodal image-search system that runs
-entirely on a single <strong>NVIDIA Jetson AGX Thor</strong>. Every image is stored as several
+# Architecture — Image Search at the Edge
+
+Image Search at the Edge is an offline-first, multimodal image-search system that runs
+entirely on a single **NVIDIA Jetson AGX Thor**. Every image is stored as several
 independent representations — an image vector, a caption vector, and a lexical index — and
 every query is scored against each and fused into a single ranked list. All model and
-database work happens on the device, with no runtime internet dependency.</p>
-<h2>Ingestion — building the index</h2>
-<p>The raw image feeds two branches in parallel: a CLIP image encoder (the image vector) and a
+database work happens on the device, with no runtime internet dependency.
+
+## Ingestion — building the index
+
+The raw image feeds two branches in parallel: a CLIP image encoder (the image vector) and a
 local vision-language captioner. The generated caption then feeds its own two branches: a
 CLIP text encoder (the caption vector) and a BM25 lexical index. All three representations
-land in the vector database, keyed to the same image.</p>
+land in the vector database, keyed to the same image.
+
 <p align="center"><svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 405" role="img">
 <title>Weaviate database ingestion</title>
 <style>
@@ -79,11 +79,13 @@ rect.box{stroke-width:0.5;}
 <path d="M547 264 L547 333 L499 333" class="arr" marker-end="url(#arrow)"/>
 </svg></p>
 
-<h2>Search — querying and fusion</h2>
-<p>The query splits the same way the image did. The encoded query vector drives cosine
+## Search — querying and fusion
+
+The query splits the same way the image did. The encoded query vector drives cosine
 similarity against both the image vector and the caption vector, while the raw query terms
 drive the BM25 lexical leg. Each leg is normalized independently, then combined with fixed
-fusion weights. The top results come straight out of the fused score.</p>
+fusion weights. The top results come straight out of the fused score.
+
 <p align="center"><svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 495" role="img">
 <title>Search and fusion</title>
 <style>
@@ -155,14 +157,16 @@ rect.box{stroke-width:0.5;}
 <line x1="340" y1="361" x2="340" y2="396" class="arr" marker-end="url(#arrow)"/>
 </svg></p>
 
-<h2>A newer configuration: long captions</h2>
-<p>A later configuration keeps the same three-leg shape but lifts a key constraint. The
+## A newer configuration: long captions
+
+A later configuration keeps the same three-leg shape but lifts a key constraint. The
 earlier CLIP text encoder capped captions at 77 tokens, which forced a hard tradeoff:
 detailed captions were too long to embed (reachable only through keyword matching), so
 captions had to be shrunk to fit — embeddable, but thin. Switching to a long-context
-embedder (<strong>jina-clip-v2</strong>, 8192 tokens) removes that ceiling, so the caption can grow to
-~250 words <em>and</em> be embedded. Captioner "thinking" is turned off since it consumed the
-token budget for no measurable gain, and storage moves to <strong>Qdrant</strong>.</p>
+embedder (**jina-clip-v2**, 8192 tokens) removes that ceiling, so the caption can grow to
+~250 words *and* be embedded. Captioner "thinking" is turned off since it consumed the
+token budget for no measurable gain, and storage moves to **Qdrant**.
+
 <p align="center"><svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 405" role="img">
 <title>Qdrant database ingestion</title>
 <style>
@@ -229,61 +233,26 @@ rect.box{stroke-width:0.5;}
 <path d="M547 264 L547 333 L499 333" class="arr" marker-end="url(#arrow)"/>
 </svg></p>
 
-<h2>Configurations at a glance</h2>
-<table>
-<thead>
-<tr>
-<th></th>
-<th>Baseline</th>
-<th>Dual-embedding</th>
-<th>Long-caption</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Caption model</td>
-<td><code>gemma-3-4b-it</code></td>
-<td><code>gemma4:e2b</code>, thinking on</td>
-<td><code>gemma4:e2b</code>, thinking off</td>
-</tr>
-<tr>
-<td>Caption length</td>
-<td>~150 words</td>
-<td>~50 words</td>
-<td>~250 words</td>
-</tr>
-<tr>
-<td>Embedder</td>
-<td>DFN5B-CLIP (77 tok)</td>
-<td>DFN5B-CLIP (77 tok)</td>
-<td>jina-clip-v2 (8192 tok)</td>
-</tr>
-<tr>
-<td>Vectors stored</td>
-<td>image only</td>
-<td>image + caption</td>
-<td>image + caption</td>
-</tr>
-<tr>
-<td>Fusion</td>
-<td>75% image + 25% BM25</td>
-<td>60% image + 25% caption + 15% BM25</td>
-<td>image + caption + BM25</td>
-</tr>
-<tr>
-<td>Database</td>
-<td>Weaviate</td>
-<td>Weaviate</td>
-<td>Qdrant</td>
-</tr>
-</tbody>
-</table>
-<p>Color key for the diagrams: gray = source/output, purple = neural model, teal = CLIP vector
-operations, amber = BM25 lexical, blue = storage/fusion.</p>
-<h2>How it performs</h2>
-<p>Across five public image-search benchmarks, the edge system is compared against a set of
+## Configurations at a glance
+
+| | Baseline | Dual-embedding | Long-caption |
+|---|---|---|---|
+| Caption model | `gemma-3-4b-it` | `gemma4:e2b`, thinking on | `gemma4:e2b`, thinking off |
+| Caption length | ~150 words | ~50 words | ~250 words |
+| Embedder | DFN5B-CLIP (77 tok) | DFN5B-CLIP (77 tok) | jina-clip-v2 (8192 tok) |
+| Vectors stored | image only | image + caption | image + caption |
+| Fusion | 75% image + 25% BM25 | 60% image + 25% caption + 15% BM25 | image + caption + BM25 |
+| Database | Weaviate | Weaviate | Qdrant |
+
+Color key for the diagrams: gray = source/output, purple = neural model, teal = CLIP vector
+operations, amber = BM25 lexical, blue = storage/fusion.
+
+## How it performs
+
+Across five public image-search benchmarks, the edge system is compared against a set of
 datacenter reference systems on a single composite score. Edge configurations are shown in
-teal.</p>
+teal.
+
 <p align="center"><svg xmlns="http://www.w3.org/2000/svg" width="680" viewBox="0 0 680 350" role="img"><title>Overall primary leaderboard (MRR + Success@25)</title><style>
 text{font-family:'Anthropic Sans',-apple-system,'Segoe UI',Roboto,sans-serif;}
 .ttl{font-size:15px;font-weight:500;} .val{font-size:12px;font-weight:500;}
@@ -310,8 +279,8 @@ text{font-family:'Anthropic Sans',-apple-system,'Segoe UI',Roboto,sans-serif;}
 }
 </style><text class="ttl" x="360" y="28" text-anchor="middle">Overall primary + diversity leaderboard</text><line class="grid" x1="70" y1="300.0" x2="650" y2="300.0"/><text class="axl" x="60" y="304.0" text-anchor="end">0.0</text><line class="grid" x1="70" y1="216.7" x2="650" y2="216.7"/><text class="axl" x="60" y="220.7" text-anchor="end">0.2</text><line class="grid" x1="70" y1="133.3" x2="650" y2="133.3"/><text class="axl" x="60" y="137.3" text-anchor="end">0.4</text><line class="grid" x1="70" y1="50.0" x2="650" y2="50.0"/><text class="axl" x="60" y="54.0" text-anchor="end">0.6</text><line class="axis" x1="70" y1="300" x2="650" y2="300"/><g class="ref"><rect x="88.4" y="120.8" width="59.9" height="179.2" rx="3"/></g><text class="val" x="118.3" y="114.8" text-anchor="middle">0.430</text><text class="axl" x="118.3" y="318.0" text-anchor="middle">v10</text><g class="ref"><rect x="185.0" y="120.8" width="59.9" height="179.2" rx="3"/></g><text class="val" x="215.0" y="114.8" text-anchor="middle">0.430</text><text class="axl" x="215.0" y="318.0" text-anchor="middle">v11</text><g class="edge"><rect x="281.7" y="128.8" width="59.9" height="171.2" rx="3"/></g><text class="val" x="311.7" y="122.8" text-anchor="middle">0.411</text><text class="axl" x="311.7" y="318.0" text-anchor="middle">edge_v1</text><g class="ref"><rect x="378.4" y="130.0" width="59.9" height="170.0" rx="3"/></g><text class="val" x="408.3" y="124.0" text-anchor="middle">0.408</text><text class="axl" x="408.3" y="318.0" text-anchor="middle">v12</text><g class="ref"><rect x="475.0" y="151.7" width="59.9" height="148.3" rx="3"/></g><text class="val" x="505.0" y="145.7" text-anchor="middle">0.356</text><text class="axl" x="505.0" y="318.0" text-anchor="middle">baseline</text><g class="edge"><rect x="571.7" y="157.5" width="59.9" height="142.5" rx="3"/></g><text class="val" x="601.7" y="151.5" text-anchor="middle">0.342</text><text class="axl" x="601.7" y="318.0" text-anchor="middle">edge_v2</text></svg></p>
 
-<p>Despite running fully on-device, the edge baseline ranks <strong>3rd of 6</strong> on the primary
-composite (0.517, within ~0.006 of the top reference systems) and posts the <strong>highest
-Success@25 of any system (0.697)</strong> — it most reliably surfaces a relevant image in the top
+Despite running fully on-device, the edge baseline ranks **3rd of 6** on the primary
+composite (0.517, within ~0.006 of the top reference systems) and posts the **highest
+Success@25 of any system (0.697)** — it most reliably surfaces a relevant image in the top
 results. Its lower MRR, from having no reranker, is what keeps it just behind the two
-leaders.</p></body></html>
+leaders.
