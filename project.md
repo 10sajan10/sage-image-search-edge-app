@@ -1,7 +1,7 @@
 Image Search at the Edge
 
 Image Search at the Edge is an offline-first, multimodal image-search system that runs
-entirely on a single **NVIDIA Jetson AGX Thor**. Every image is stored as several
+entirely on single **NVIDIA Jetson AGX Thor**. Every image is stored as several
 independent representations — an image vector, a caption vector, and a lexical index — and
 every query is scored against each and fused into a single ranked list. All model and
 database work happens on the device, with no runtime internet dependency.
