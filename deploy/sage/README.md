@@ -1,99 +1,150 @@
 # Sage deployment
 
-The production topology uses one immutable image in two independently
-supervised roles:
+This directory deploys two separate images:
 
-1. `image-search-ingest`: a Sage plugin Deployment. `pluginctl` is used because
-   it injects `/run/waggle/data-config.json`, camera configuration, and the
-   PyWaggle transport.
-2. `image-search-api`: an ordinary Kubernetes Deployment and ClusterIP Service.
-   It does not need camera access or Ollama.
+| Workload | Lifecycle | Purpose |
+| --- | --- | --- |
+| `image-search-ingest` | daemon Deployment or scheduled one-shot job | capture, caption, embed, and index |
+| `image-search-api` | always-running Deployment with one replica | authenticated hybrid search |
 
-Qdrant and Ollama stay private. Only the search Service is a future ingress
-candidate.
+Both workloads use the same Qdrant collection and Jina model contract. Only
+ingestion needs the camera, Ollama, frame storage, and durable spool.
 
 ## Prerequisites
 
-- The application image is built by Sage ECR and its exact registry tag is
-  known.
-- `/opt/sage/image-search-models/jina-clip-v2` contains the model weights.
-- `/opt/sage/image-search-models/hf-cache` contains Jina's trusted-code cache.
-- Qdrant and Ollama are reachable from the plugin pod using private URLs.
-- An administrator can run `sudo pluginctl` and `sudo kubectl`.
+- Both images have been built and pushed to a registry visible from the node.
+- `jina-clip-v2/` and `hf-cache/` exist below the model host directory.
+- Qdrant and Ollama are reachable through routable private URLs or Kubernetes
+  Service DNS names.
+- The collection name is identical in ingestion and search configuration.
+- The node administrator can use `sudo pluginctl` and `sudo kubectl`.
 
-The generated WES plugin Deployment does **not** use host networking. Therefore
-`127.0.0.1` inside the plugin is the plugin pod, not the Thor host. Use routable
-private endpoints or Kubernetes Service DNS names. If WES network policy blocks
-an external private endpoint, ask the administrator to allow it; use
-`pluginctl --develop` only for a temporary connectivity test, not as the
-production security policy.
+`127.0.0.1` inside a pod refers to that pod, not the Thor host. Do not use a
+host-loopback Qdrant or Ollama URL unless the dependency is in the same pod.
 
-## Deploy ingestion
+## Option A: long-running ingestion
 
-Copy `ingest.env.example` outside the repository and replace every placeholder.
-Never commit camera credentials or service tokens.
+Use this for frequent sampling. Jina remains loaded between captures, and
+`CAPTURE_INTERVAL_SECONDS` controls the sampling interval.
+
+Copy `ingest.env.example` outside Git and replace its placeholders. The file
+must contain only `KEY=VALUE` lines because `pluginctl --env-from` rejects
+comments and blank lines.
 
 ```bash
-sudo pluginctl deploy \
-  --name image-search-ingest \
-  --type deployment \
-  --selector resource.gpu=true \
-  --resource request.memory=8Gi,limit.memory=16Gi \
-  --env-from /secure/path/ingest.env \
-  -v /opt/sage/image-search-models:/model \
-  -v /var/lib/sage-image-search:/data \
-  REGISTRY/IMAGE:TAG
-
-sudo kubectl patch deployment image-search-ingest \
-  --type strategic \
-  --patch-file deploy/sage/ingest-production-patch.yaml
+MODEL_ROOT=/home/sajanneupane137/models \
+ENV_FILE=/home/sajanneupane137/.config/sage-image-search/ingest-h01e.env \
+scripts/deploy-ingest.sh \
+10.31.81.1:5000/local/image-search-ingest:0.3.3
 ```
 
-The patch changes updates to `Recreate`, preventing two pods from opening the
-same camera during a rollout, and adds an ingest-heartbeat liveness probe.
+The script submits the environment at deployment time, then applies
+`ingest-production-patch.yaml`. The patch sets `Recreate`, the NVIDIA
+RuntimeClass, a termination grace period, and the ingest heartbeat probe.
 
-Inspect without changing the deployment:
+Inspect it with Kubernetes because `pluginctl logs` expects a scheduler pod
+name and may not resolve a persistent Deployment:
 
 ```bash
-sudo pluginctl logs image-search-ingest
 sudo kubectl get deployment,pod -l app=image-search-ingest
-sudo kubectl exec deploy/image-search-ingest -- python3 /app/healthcheck.py
+sudo kubectl logs -f deployment/image-search-ingest \
+  -c image-search-ingest
+sudo kubectl exec deployment/image-search-ingest \
+  -c image-search-ingest -- \
+  python3 /app/healthcheck.py
 ```
 
-## Deploy search
+## Option B: scheduled one-shot ingestion
 
-1. Replace `QDRANT_PRIVATE_HOST` in `search-config.yaml`.
-2. Replace the image in `search-deployment.yaml`.
-3. Copy `search-secret.example.yaml` outside the repository and replace its key.
-4. Apply all three resources.
+Set `RUN_MODE=oneshot`. Each invocation captures one camera frame, indexes all
+pending work that is ready, and exits. The scheduler starts it again according
+to the cron science rule.
 
-```bash
-sudo kubectl apply -f deploy/sage/search-config.yaml
-sudo kubectl apply -f /secure/path/search-secret.yaml
-sudo kubectl apply -f deploy/sage/search-deployment.yaml
-sudo kubectl rollout status deployment/image-search-api --timeout=10m
+Runtime values belong in the submitted job's `pluginSpec.env` map:
+
+```yaml
+pluginSpec:
+  image: registry.example/image-search-ingest:0.3.3
+  env:
+    RUN_MODE: "oneshot"
+    COLLECTION: "edge_v4_live"
+    QDRANT_URL: "http://qdrant.example:6333"
+    CAMERA: "{secret.image-search-ingest.CAMERA}"
 ```
 
-For terminal access today, keep the Service private and port-forward it:
+The camera value uses a scheduler secret rather than plaintext. Secret
+references have the form
+`{secret.<lowercase-secret-name>.<alphanumeric-key>}`.
+
+`jobs/ingest-oneshot.example.yaml` is a complete static example. For values
+selected at submission time, use the checked-in helper:
 
 ```bash
+INGEST_IMAGE=registry.example/image-search-ingest:0.3.3 \
+NODE_ID=H01E \
+QDRANT_URL=http://qdrant.example:6333 \
+OLLAMA_URL=http://ollama.example:11434 \
+COLLECTION=edge_v4_live \
+SCHEDULE='*/5 * * * *' \
+scripts/submit-ingest-job.sh
+```
+
+The helper renders a temporary job description, shows its non-secret
+configuration, and calls:
+
+```bash
+sesctl submit --file-path TEMPORARY_JOB_FILE
+```
+
+Set `DRY_RUN=true` to print the rendered job without submitting it. Optional
+settings can be supplied in `JOB_ENV_FILE` as `KEY=VALUE` lines. Values in that
+file override defaults, except `RUN_MODE`, which is always forced to
+`oneshot`.
+
+### GPU limitation for remotely scheduled jobs
+
+The current edge-scheduler `pluginSpec` supports environment, volumes, node
+selectors, and resource settings, but it does not expose
+`runtimeClassName`. H01E needs `runtimeClassName: nvidia` for CUDA. Therefore,
+remote scheduled jobs require an administrator to configure automatic/default
+NVIDIA RuntimeClass injection. Until then, use the long-running
+`pluginctl deploy` path, whose production patch sets the RuntimeClass
+explicitly.
+
+## Always-running search
+
+Copy `search-config.yaml` outside Git and set its private Qdrant URL. Create a
+secret from `search-secret.example.yaml` outside Git, or reuse an existing
+`image-search-secret`.
+
+```bash
+MODEL_ROOT=/home/sajanneupane137/models \
+CONFIG_FILE=/home/sajanneupane137/.config/sage-image-search/search-config-h01e.yaml \
+SECRET_FILE=/home/sajanneupane137/.config/sage-image-search/search-secret-h01e.yaml \
+scripts/deploy-search.sh \
+10.31.81.1:5000/local/image-search-api:0.3.3
+```
+
+The Deployment declares `replicas: 1`; Kubernetes restarts the process after a
+failure or node restart. The deploy helper also explicitly restores it to one
+replica.
+
+Check and query it:
+
+```bash
+sudo kubectl get deployment,pod,service \
+  -l app.kubernetes.io/name=image-search-api
+sudo kubectl logs -f deployment/image-search-api
 sudo kubectl port-forward service/image-search-api 8099:8099
 ```
 
-In another terminal:
+In a second terminal:
 
 ```bash
-SEARCH_API_KEY='the same key' \
-python3 search_cli.py "wildfire smoke above trees" \
-  --url http://127.0.0.1:8099 \
-  --top-k 10
+SEARCH_API_KEY="$(<~/.config/sage-image-search/search-api-key)" \
+scripts/query.sh "wildfire smoke above trees" --top-k 10
 ```
 
-This uses the same HTTP contract that a later UI, authenticated Ingress, or
-other service will use. Do not expose the ClusterIP by changing it to NodePort
-without TLS, authentication, firewall policy, and administrator review.
-
-Each Sage edge node normally has its own WES/k3s cluster. A ClusterIP on one
-node is not automatically reachable from another Sage node. Cross-node access
-requires an administrator-managed authenticated Ingress or a centrally hosted
-search Deployment beside the fixed Qdrant service.
+Keep the Service as `ClusterIP` for same-node access. Cross-node access needs
+an administrator-managed authenticated Ingress or a centrally hosted search
+service. Do not expose it as an unauthenticated NodePort.

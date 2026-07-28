@@ -8,7 +8,7 @@ import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from pipeline import Frame
+from image_search.pipeline import Frame
 
 
 @dataclass
@@ -57,10 +57,21 @@ class DurableSpool:
     def __init__(self, root: Path):
         self.root = root
         self.pending_dir = root / "pending"
-        self.completed_dir = root / "completed"
+        self.ingested_dir = root / "ingested"
         self.failed_dir = root / "failed"
-        for directory in (self.pending_dir, self.completed_dir, self.failed_dir):
+        for directory in (self.pending_dir, self.ingested_dir, self.failed_dir):
             directory.mkdir(parents=True, exist_ok=True)
+        self._migrate_completed_records()
+
+    def _migrate_completed_records(self) -> None:
+        """Move records written by releases which named the state completed."""
+        completed_dir = self.root / "completed"
+        if not completed_dir.is_dir():
+            return
+        for source in completed_dir.glob("*.json"):
+            destination = self.ingested_dir / source.name
+            if not destination.exists():
+                os.replace(source, destination)
 
     def _path(self, directory: Path, point_id: str) -> Path:
         return directory / f"{point_id}.json"
@@ -70,7 +81,7 @@ class DurableSpool:
             self._path(directory, point_id).exists()
             for directory in (
                 self.pending_dir,
-                self.completed_dir,
+                self.ingested_dir,
                 self.failed_dir,
             )
         )
@@ -85,11 +96,11 @@ class DurableSpool:
         now = time.time_ns()
         records = []
         for path in sorted(self.pending_dir.glob("*.json")):
-            # complete() writes the durable result before unlinking pending.
+            # mark_ingested() writes the durable result before unlinking pending.
             # A crash between those operations is safe: discard the stale
             # pending marker instead of repeating captioning and embedding.
             if (
-                self._path(self.completed_dir, path.stem).exists()
+                self._path(self.ingested_dir, path.stem).exists()
                 or self._path(self.failed_dir, path.stem).exists()
             ):
                 path.unlink()
@@ -116,11 +127,11 @@ class DurableSpool:
                     break
         return records
 
-    def complete(self, record: SpoolRecord, result: dict) -> None:
+    def mark_ingested(self, record: SpoolRecord, result: dict) -> None:
         source = self._path(self.pending_dir, record.point_id)
-        destination = self._path(self.completed_dir, record.point_id)
-        completed = {**asdict(record), "completed_at_ns": time.time_ns(), **result}
-        atomic_json(destination, completed)
+        destination = self._path(self.ingested_dir, record.point_id)
+        ingested = {**asdict(record), "ingested_at_ns": time.time_ns(), **result}
+        atomic_json(destination, ingested)
         if source.exists():
             source.unlink()
 
@@ -158,7 +169,7 @@ class DurableSpool:
     def counts(self) -> dict[str, int]:
         return {
             "pending": sum(1 for _ in self.pending_dir.glob("*.json")),
-            "completed": sum(1 for _ in self.completed_dir.glob("*.json")),
+            "ingested": sum(1 for _ in self.ingested_dir.glob("*.json")),
             "failed": sum(1 for _ in self.failed_dir.glob("*.json")),
         }
 

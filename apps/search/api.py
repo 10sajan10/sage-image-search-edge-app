@@ -13,9 +13,9 @@ import uvicorn
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from app_config import SearchConfig
-from logging_setup import configure_logging
-from pipeline import ApiError, Embedder, QdrantStore, SearchEngine
+from image_search.config import SearchConfig
+from image_search.logging import configure_logging
+from image_search.pipeline import ApiError, Embedder, QdrantStore, SearchEngine
 
 LOGGER = logging.getLogger("image_search.search_api")
 
@@ -86,7 +86,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="Sage Image Search API",
-    version="0.2.0",
+    version="0.3.3",
     description="Weighted image, caption, and BM25 search over a fixed Qdrant collection.",
     lifespan=lifespan,
 )

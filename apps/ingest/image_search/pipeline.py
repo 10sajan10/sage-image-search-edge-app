@@ -17,7 +17,7 @@ from typing import Any
 
 from PIL import Image
 
-from app_config import CaptionConfig, CommonConfig, SearchConfig
+from image_search.config import CaptionConfig, CommonConfig, SearchConfig
 
 LOGGER = logging.getLogger("image_search.pipeline")
 LEGS = ("image", "caption", "bm25")

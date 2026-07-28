@@ -21,11 +21,11 @@ import time
 from dataclasses import asdict
 from typing import Any
 
-from app_config import IngestConfig
-from logging_setup import configure_logging
-from pipeline import Captioner, Embedder, FrameIndexer, QdrantStore
-from sources import run_source
-from spool import DurableSpool, atomic_json
+from image_search.config import IngestConfig
+from image_search.logging import configure_logging
+from image_search.pipeline import Captioner, Embedder, FrameIndexer, QdrantStore
+from image_search.sources import run_source
+from image_search.spool import DurableSpool, atomic_json
 
 LOGGER = logging.getLogger("image_search.ingest")
 
@@ -179,7 +179,7 @@ def run() -> int:
                     write_heartbeat(config, spool, source_status, runtime)
                     continue
 
-                spool.complete(record, asdict(result))
+                spool.mark_ingested(record, asdict(result))
                 runtime["indexed"] += 1
                 runtime["last_indexed_at_ns"] = time.time_ns()
                 runtime["last_error"] = None

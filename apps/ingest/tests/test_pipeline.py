@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from app_config import CommonConfig, SearchConfig
-from pipeline import SearchEngine, normalize
+from image_search.config import CommonConfig, SearchConfig
+from image_search.pipeline import SearchEngine, normalize
 
 
 class FakeEmbedder:

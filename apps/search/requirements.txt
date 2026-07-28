@@ -1,0 +1,15 @@
+# Model and Qdrant-over-HTTP runtime.
+pillow>=11,<13
+transformers==4.53.3
+timm>=1,<2
+peft>=0.17,<1
+
+# Search service.
+fastapi>=0.116,<1
+uvicorn[standard]>=0.35,<1
+pydantic>=2.11,<3
+
+# The NVIDIA base declares pytest as a triton-kernels dependency but omits it.
+pytest>=8,<9
+
+# Torch and NumPy deliberately come from the NVIDIA PyTorch base image.

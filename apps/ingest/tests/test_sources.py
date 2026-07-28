@@ -4,9 +4,9 @@ from pathlib import Path
 
 from PIL import Image
 
-from app_config import CaptionConfig, CommonConfig, IngestConfig
-from sources import discover_directory, safe_path_component
-from spool import DurableSpool
+from image_search.config import CaptionConfig, CommonConfig, IngestConfig
+from image_search.sources import discover_directory, safe_path_component
+from image_search.spool import DurableSpool
 
 
 def config(tmp_path: Path) -> IngestConfig:
@@ -37,6 +37,7 @@ def config(tmp_path: Path) -> IngestConfig:
     return IngestConfig(
         common=common,
         caption=caption,
+        run_mode="daemon",
         capture_source="directory",
         camera="",
         capture_interval_seconds=10,
@@ -80,7 +81,7 @@ def test_completed_first_batch_does_not_starve_later_files(tmp_path: Path) -> No
 
     assert discover_directory(settings, spool) == (1, 1)
     first = spool.ready()[0]
-    spool.complete(first, {})
+    spool.mark_ingested(first, {})
     discovered, queued = discover_directory(settings, spool)
     assert discovered == 2
     assert queued == 1

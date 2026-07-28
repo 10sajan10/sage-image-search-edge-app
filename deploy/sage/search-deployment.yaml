@@ -32,11 +32,9 @@ spec:
       terminationGracePeriodSeconds: 60
       containers:
         - name: search-api
-          # Replace with the exact immutable ECR tag produced for sage.yaml.
-          image: registry.sagecontinuum.org/REPLACE_IMAGE_TAG
+          # Replace with the exact immutable ECR tag for apps/search/sage.yaml.
+          image: registry.sagecontinuum.org/USERNAME/sage-image-search-api:0.3.3
           imagePullPolicy: IfNotPresent
-          args:
-            - search_api.py
           envFrom:
             - configMapRef:
                 name: image-search-config

@@ -1,4 +1,4 @@
-"""Minimal structured logging without adding a runtime dependency."""
+"""Minimal structured logging shared by both application roles."""
 
 from __future__ import annotations
 

@@ -5,7 +5,7 @@ metadata:
   namespace: default
 data:
   QDRANT_URL: "http://QDRANT_PRIVATE_HOST:6333"
-  COLLECTION: "edge_v3_live"
+  COLLECTION: "edge_v4_live"
   EMBED_MODEL_DIR: "/model/jina-clip-v2"
   HF_HOME: "/model/hf-cache"
   REQUIRE_GPU: "true"

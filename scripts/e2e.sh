@@ -3,7 +3,8 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-IMAGE="${1:-localhost/sage-image-search-edge-app:production-test}"
+INGEST_IMAGE="${1:-localhost/image-search-ingest:production-test}"
+SEARCH_IMAGE="${2:-localhost/image-search-api:production-test}"
 MODEL_ROOT="${MODEL_ROOT:-$HOME/models}"
 QDRANT_URL="${QDRANT_URL:-http://127.0.0.1:6333}"
 OLLAMA_URL="${OLLAMA_URL:-http://127.0.0.1:11434}"
@@ -41,14 +42,14 @@ docker run --rm \
   -v "$WORK_DIR/images:/data/images:ro" \
   -v "$WORK_DIR/data:/data" \
   -e CAPTURE_SOURCE=directory \
+  -e RUN_MODE=oneshot \
   -e IMAGE_DIR=/data/images \
-  -e EXIT_WHEN_DRAINED=true \
   -e PUBLISH_TO_BEEHIVE=false \
   -e NODE_ID=E2E \
   -e CAMERA_ID=test-camera \
   -e OLLAMA_URL="$OLLAMA_URL" \
   -e CAPTION_TARGET_WORDS=40 \
-  "$IMAGE"
+  "$INGEST_IMAGE"
 
 points_before="$(
   curl -fsS "$QDRANT_URL/collections/$COLLECTION" \
@@ -56,26 +57,26 @@ points_before="$(
 )"
 [ "$points_before" = 2 ]
 
-# Restart against the same spool: deterministic identity and completed records
+# Restart against the same spool: deterministic identity and ingested receipts
 # must prevent duplicate work.
 docker run --rm \
   "${common_args[@]}" \
   -v "$WORK_DIR/images:/data/images:ro" \
   -v "$WORK_DIR/data:/data" \
   -e CAPTURE_SOURCE=directory \
+  -e RUN_MODE=oneshot \
   -e IMAGE_DIR=/data/images \
-  -e EXIT_WHEN_DRAINED=true \
   -e PUBLISH_TO_BEEHIVE=false \
   -e NODE_ID=E2E \
   -e CAMERA_ID=test-camera \
   -e OLLAMA_URL="$OLLAMA_URL" \
-  "$IMAGE"
+  "$INGEST_IMAGE"
 
 docker run -d --name "$API_CONTAINER" \
   "${common_args[@]}" \
   -e SEARCH_PORT="$E2E_PORT" \
   -e SEARCH_API_KEY=e2e-key \
-  "$IMAGE" search_api.py >/dev/null
+  "$SEARCH_IMAGE" >/dev/null
 
 for _ in $(seq 1 60); do
   curl -fsS --max-time 2 "http://127.0.0.1:$E2E_PORT/readyz" >/dev/null 2>&1 && break
@@ -83,7 +84,7 @@ for _ in $(seq 1 60); do
 done
 curl -fsS "http://127.0.0.1:$E2E_PORT/readyz" >/dev/null
 
-SEARCH_API_KEY=e2e-key python3 "$REPO_DIR/search_cli.py" \
+SEARCH_API_KEY=e2e-key python3 "$REPO_DIR/apps/search/cli.py" \
   "wildfire smoke and flames" \
   --url "http://127.0.0.1:$E2E_PORT" \
   --top-k 2 \
@@ -97,5 +98,5 @@ result = json.load(open(sys.argv[1], encoding="utf-8"))
 assert result["returned"] == 2
 assert result["results"][0]["image_id"] == "fire.jpg"
 assert result["legs_queried"] == ["bm25", "caption", "image"]
-print("E2E PASS: ingest, restart idempotence, authenticated API, and ranking")
+print("E2E PASS: separate ingest/search images, restart idempotence, auth, and ranking")
 PY

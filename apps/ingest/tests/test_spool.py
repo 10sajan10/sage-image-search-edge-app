@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from spool import DurableSpool, SpoolRecord
+from image_search.spool import DurableSpool, SpoolRecord
 
 
 def record(image_path: Path) -> SpoolRecord:
@@ -19,21 +19,21 @@ def record(image_path: Path) -> SpoolRecord:
     )
 
 
-def test_spool_is_idempotent_and_completes(tmp_path: Path) -> None:
+def test_spool_is_idempotent_and_marks_ingested(tmp_path: Path) -> None:
     spool = DurableSpool(tmp_path / "spool")
     item = record(tmp_path / "image.jpg")
 
     assert spool.enqueue(item)
     assert not spool.enqueue(item)
-    assert spool.counts() == {"pending": 1, "completed": 0, "failed": 0}
+    assert spool.counts() == {"pending": 1, "ingested": 0, "failed": 0}
     assert spool.ready() == [item]
 
-    spool.complete(item, {"caption_words": 42})
-    assert spool.counts() == {"pending": 0, "completed": 1, "failed": 0}
-    completed = json.loads(
-        (spool.completed_dir / f"{item.point_id}.json").read_text()
+    spool.mark_ingested(item, {"caption_words": 42})
+    assert spool.counts() == {"pending": 0, "ingested": 1, "failed": 0}
+    ingested = json.loads(
+        (spool.ingested_dir / f"{item.point_id}.json").read_text()
     )
-    assert completed["caption_words"] == 42
+    assert ingested["caption_words"] == 42
     assert not spool.enqueue(item)
 
 
@@ -59,15 +59,29 @@ def test_failure_persists_retry_then_dead_letters(tmp_path: Path) -> None:
     dead, delay = spool.fail(retried, RuntimeError("still offline"), 2, 0.1, 1)
     assert dead
     assert delay == 0
-    assert spool.counts() == {"pending": 0, "completed": 0, "failed": 1}
+    assert spool.counts() == {"pending": 0, "ingested": 0, "failed": 1}
 
 
-def test_completed_record_wins_after_interrupted_cleanup(tmp_path: Path) -> None:
+def test_ingested_record_wins_after_interrupted_cleanup(tmp_path: Path) -> None:
     spool = DurableSpool(tmp_path / "spool")
     item = record(tmp_path / "image.jpg")
     spool.enqueue(item)
-    completed = spool.completed_dir / f"{item.point_id}.json"
-    completed.write_text('{"completed": true}\n', encoding="utf-8")
+    ingested = spool.ingested_dir / f"{item.point_id}.json"
+    ingested.write_text('{"ingested": true}\n', encoding="utf-8")
 
     assert spool.ready() == []
-    assert spool.counts() == {"pending": 0, "completed": 1, "failed": 0}
+    assert spool.counts() == {"pending": 0, "ingested": 1, "failed": 0}
+
+
+def test_legacy_completed_records_are_migrated(tmp_path: Path) -> None:
+    root = tmp_path / "spool"
+    completed = root / "completed"
+    completed.mkdir(parents=True)
+    legacy = completed / "legacy-point.json"
+    legacy.write_text('{"completed": true}\n', encoding="utf-8")
+
+    spool = DurableSpool(root)
+
+    assert not legacy.exists()
+    assert (spool.ingested_dir / legacy.name).exists()
+    assert spool.counts() == {"pending": 0, "ingested": 1, "failed": 0}

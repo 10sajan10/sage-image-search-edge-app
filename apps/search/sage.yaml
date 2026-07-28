@@ -1,0 +1,20 @@
+name: "sage-image-search-api"
+version: "0.3.3"
+description: "Always-running authenticated hybrid image-search API backed by Qdrant."
+keywords: "image-search,semantic-search,jina-clip,qdrant,bm25,fastapi,edge-ai,thor"
+authors: "Sajan Neupane"
+collaborators: ""
+funding: ""
+license: ""
+homepage: "https://github.com/10sajan10/sage-image-search-edge-app/apps/search"
+
+source:
+  architectures:
+    - "linux/arm64"
+  url: "https://github.com/10sajan10/sage-image-search-edge-app.git"
+  branch: "main"
+  directory: "apps/search"
+  dockerfile: "Dockerfile"
+
+resources:
+  - type: gpu

@@ -1,4 +1,4 @@
-"""Container health check for the persistent ingestion role."""
+"""Container health check for daemon-mode ingestion."""
 
 from __future__ import annotations
 

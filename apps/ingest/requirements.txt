@@ -1,0 +1,15 @@
+# Shared model and Qdrant-over-HTTP runtime.
+pillow>=11,<13
+transformers==4.53.3
+timm>=1,<2
+peft>=0.17,<1
+
+# Sage camera and telemetry integration.
+pywaggle==0.56.0
+opencv-python-headless==5.0.0.93
+ffmpeg-python==0.2.0
+
+# The NVIDIA base declares pytest as a triton-kernels dependency but omits it.
+pytest>=8,<9
+
+# Torch and NumPy deliberately come from the NVIDIA PyTorch base image.

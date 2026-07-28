@@ -12,8 +12,8 @@ from pathlib import Path
 
 from PIL import Image
 
-from app_config import IngestConfig
-from spool import DurableSpool, SpoolRecord
+from image_search.config import IngestConfig, redacted_url
+from image_search.spool import DurableSpool, SpoolRecord
 
 LOGGER = logging.getLogger("image_search.sources")
 POINT_NAMESPACE = uuid.UUID("6f9d5c1e-3a7b-4e2f-9c88-0f5a1b2c3d4e")
@@ -112,7 +112,10 @@ def run_camera(
     captures = 0
     LOGGER.info(
         "opening camera",
-        extra={"camera": config.camera, "interval_seconds": interval},
+        extra={
+            "camera": redacted_url(config.camera),
+            "interval_seconds": interval,
+        },
     )
     with Camera(config.camera) as camera:
         while not stop_event.is_set():

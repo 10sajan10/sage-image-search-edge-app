@@ -59,8 +59,8 @@ def request_payload(args: argparse.Namespace) -> dict:
 def call_api(args: argparse.Namespace) -> dict:
     body = json.dumps(request_payload(args)).encode("utf-8")
     headers = {"Content-Type": "application/json"}
-    if args.api_key:
-        headers["X-API-Key"] = args.api_key
+    if args.api_key.strip():
+        headers["X-API-Key"] = args.api_key.strip()
     request = urllib.request.Request(
         f"{args.url.rstrip('/')}/search",
         data=body,

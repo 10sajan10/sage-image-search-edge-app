@@ -1,4 +1,4 @@
-"""Validated environment configuration for both application roles."""
+"""Validated environment configuration shared by both application roles."""
 
 from __future__ import annotations
 
@@ -76,7 +76,7 @@ class CommonConfig:
 
     @classmethod
     def from_env(cls) -> "CommonConfig":
-        collection = env("COLLECTION", "edge_v3_live")
+        collection = env("COLLECTION", "edge_v4_live")
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,254}", collection):
             raise ValueError(f"COLLECTION contains unsupported characters: {collection!r}")
         return cls(
@@ -137,7 +137,7 @@ class CaptionConfig:
             max_image_edge=env_int("MAX_IMAGE_EDGE", 1024, minimum=64),
             prompt=env(
                 "CAPTION_PROMPT",
-                "Describe this image in one factual paragraph of about 550 words. "
+                f"Describe this image in one factual paragraph of about {target_words} words. "
                 "Mention the main subjects, setting, and key visual details. "
                 "Do not begin with phrases like 'This image shows' or 'Here is'. "
                 "Return only the caption, no preamble, no markdown.",
@@ -162,6 +162,7 @@ class CaptionConfig:
 class IngestConfig:
     common: CommonConfig
     caption: CaptionConfig
+    run_mode: str
     capture_source: str
     camera: str
     capture_interval_seconds: int
@@ -181,6 +182,9 @@ class IngestConfig:
     @classmethod
     def from_env(cls) -> "IngestConfig":
         common = CommonConfig.from_env()
+        run_mode = env("RUN_MODE", "daemon").lower()
+        if run_mode not in {"daemon", "oneshot"}:
+            raise ValueError("RUN_MODE must be 'daemon' or 'oneshot'")
         source = env("CAPTURE_SOURCE", "camera").lower()
         if source not in {"camera", "directory"}:
             raise ValueError("CAPTURE_SOURCE must be 'camera' or 'directory'")
@@ -188,9 +192,15 @@ class IngestConfig:
         if source == "camera" and not camera:
             raise ValueError("CAMERA is required when CAPTURE_SOURCE=camera")
         spool_dir = Path(env("SPOOL_DIR", "/data/spool"))
+        max_captures = env_int("MAX_CAPTURES", 0, minimum=0)
+        exit_when_drained = env_bool("EXIT_WHEN_DRAINED", False)
+        if run_mode == "oneshot":
+            max_captures = 1 if source == "camera" else max_captures
+            exit_when_drained = True
         return cls(
             common=common,
             caption=CaptionConfig.from_env(),
+            run_mode=run_mode,
             capture_source=source,
             camera=camera,
             capture_interval_seconds=env_int(
@@ -210,8 +220,8 @@ class IngestConfig:
             retry_max_seconds=env_float(
                 "INGEST_RETRY_MAX_SECONDS", 300.0, minimum=1.0
             ),
-            max_captures=env_int("MAX_CAPTURES", 0, minimum=0),
-            exit_when_drained=env_bool("EXIT_WHEN_DRAINED", False),
+            max_captures=max_captures,
+            exit_when_drained=exit_when_drained,
             publish_to_beehive=env_bool("PUBLISH_TO_BEEHIVE", True),
             heartbeat_path=Path(
                 env("HEARTBEAT_PATH", str(spool_dir / "heartbeat.json"))
@@ -222,8 +232,9 @@ class IngestConfig:
         return {
             **self.common.public_dict(),
             **self.caption.public_dict(),
+            "run_mode": self.run_mode,
             "capture_source": self.capture_source,
-            "camera": self.camera or None,
+            "camera": redacted_url(self.camera) if self.camera else None,
             "capture_interval_seconds": self.capture_interval_seconds,
             "image_dir": str(self.image_dir),
             "image_glob": self.image_glob,

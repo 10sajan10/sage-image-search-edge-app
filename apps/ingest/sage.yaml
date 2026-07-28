@@ -1,0 +1,20 @@
+name: "sage-image-search-ingest"
+version: "0.3.3"
+description: "Schedulable Sage camera ingestion into a durable hybrid image-search collection."
+keywords: "camera,image-ingestion,captioning,jina-clip,qdrant,edge-ai,thor"
+authors: "Sajan Neupane"
+collaborators: ""
+funding: ""
+license: ""
+homepage: "https://github.com/10sajan10/sage-image-search-edge-app"
+
+source:
+  architectures:
+    - "linux/arm64"
+  url: "https://github.com/10sajan10/sage-image-search-edge-app.git"
+  branch: "main"
+  directory: "apps/ingest"
+  dockerfile: "Dockerfile"
+
+resources:
+  - type: gpu
