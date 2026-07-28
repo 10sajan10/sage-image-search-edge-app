@@ -39,6 +39,22 @@ ENV HF_HUB_OFFLINE=1 \
 
 COPY . .
 
-# Populate is the default. The search API is the same image with a different
-# entrypoint (pluginctl --entrypoint, or `docker run ... python3 search.py`).
-ENTRYPOINT ["python3", "main.py"]
+# Fail the build on syntax errors even when the target role is not the default.
+RUN python3 -m compileall -q \
+        app_config.py \
+        healthcheck.py \
+        logging_setup.py \
+        main.py \
+        pipeline.py \
+        search_api.py \
+        search_cli.py \
+        sources.py \
+        spool.py
+
+# One image, two supervised roles:
+#   docker run IMAGE                  -> persistent ingestion
+#   docker run IMAGE search_api.py    -> search API
+# Kubernetes may override command/args explicitly for either role.
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["python3"]
+CMD ["main.py"]

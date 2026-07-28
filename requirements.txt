@@ -7,17 +7,17 @@
 pywaggle==0.56.0
 
 # What the [vision] extra would have provided, minus the GUI dependency.
-opencv-python-headless>=4.10
-ffmpeg-python>=0.2.0
+opencv-python-headless==5.0.0.93
+ffmpeg-python==0.2.0
 
 # Image decoding/resizing for captioning + embedding (the populate path uses
 # only Pillow; it never imports cv2).
-pillow
+pillow>=11,<13
 
-# search.py only: the HTTP search API. main.py does not import these.
-fastapi
-uvicorn[standard]
-pydantic
+# search_api.py only: the HTTP search API. main.py does not import these.
+fastapi>=0.116,<1
+uvicorn[standard]>=0.35,<1
+pydantic>=2.11,<3
 
 # jina-clip-v2 loads via trust_remote_code, and that remote code was written for
 # transformers 4.x: it does `hasattr(torch, torch_dtype)` assuming a string,
@@ -28,8 +28,14 @@ transformers==4.53.3
 
 # Required by jina-clip-v2's towers: timm for the EVA02 vision side, peft for
 # the jina-embeddings-v3 text side (it declares LoRA adaptations).
-timm
-peft
+timm>=1,<2
+peft>=0.17,<1
+
+# NVIDIA's 26.06 base declares pytest as a dependency of its preinstalled
+# triton-kernels package but omits it. Keeping pytest here makes `pip check`
+# clean and allows the same immutable image to run its self-tests before
+# deployment.
+pytest>=8,<9
 
 # DO NOT add torch or numpy here.
 #

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: image-search-config
+  namespace: default
+data:
+  QDRANT_URL: "http://QDRANT_PRIVATE_HOST:6333"
+  COLLECTION: "edge_v3_live"
+  EMBED_MODEL_DIR: "/model/jina-clip-v2"
+  HF_HOME: "/model/hf-cache"
+  REQUIRE_GPU: "true"
+  SEARCH_HOST: "0.0.0.0"
+  SEARCH_PORT: "8099"
+  SEARCH_MAX_CONCURRENCY: "1"
+  SEARCH_REQUEST_TIMEOUT_SECONDS: "60"
+  WEIGHT_IMAGE: "0.60"
+  WEIGHT_CAPTION: "0.25"
+  WEIGHT_BM25: "0.15"
+  CANDIDATES_PER_LEG: "100"
+  DEFAULT_TOP_K: "25"
+  MAX_TOP_K: "200"
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"

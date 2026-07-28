@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-search-api
+  namespace: default
+  labels:
+    app.kubernetes.io/name: image-search-api
+    app.kubernetes.io/part-of: sage-image-search
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: image-search-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: image-search-api
+        app.kubernetes.io/part-of: sage-image-search
+    spec:
+      # nodeSelector only chooses a GPU-capable NODE; it does not grant the
+      # container GPU access. The GPU is not a schedulable resource here (no
+      # nvidia.com/gpu in node allocatable), so CUDA comes from the `nvidia`
+      # RuntimeClass. Verified on this node:
+      #   pod without runtimeClassName -> torch.cuda.is_available() == False
+      #   pod with    runtimeClassName -> True, "NVIDIA Thor"
+      # Omit it and REQUIRE_GPU=true refuses the CPU fallback -> CrashLoopBackOff.
+      runtimeClassName: nvidia
+      nodeSelector:
+        resource.gpu: "true"
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: search-api
+          # Replace with the exact immutable ECR tag produced for sage.yaml.
+          image: registry.sagecontinuum.org/REPLACE_IMAGE_TAG
+          imagePullPolicy: IfNotPresent
+          args:
+            - search_api.py
+          envFrom:
+            - configMapRef:
+                name: image-search-config
+            - secretRef:
+                name: image-search-secret
+          ports:
+            - name: http
+              containerPort: 8099
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "1"
+              memory: 8Gi
+            limits:
+              memory: 16Gi
+          startupProbe:
+            httpGet:
+              path: /livez
+              port: http
+            periodSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: http
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+          volumeMounts:
+            - name: models
+              mountPath: /model
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: models
+          hostPath:
+            # Provision jina-clip-v2 and hf-cache below this host path first.
+            path: /opt/sage/image-search-models
+            type: Directory
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: image-search-api
+  namespace: default
+  labels:
+    app.kubernetes.io/name: image-search-api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: image-search-api
+  ports:
+    - name: http
+      port: 8099
+      targetPort: http
+      protocol: TCP

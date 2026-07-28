@@ -44,6 +44,7 @@ venv/
 # Docs and notebooks: not needed at runtime.
 *.md
 *.ipynb
+deploy/
 
 # Docker's own files never need to be inside the image.
 Dockerfile

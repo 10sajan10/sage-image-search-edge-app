@@ -1,0 +1,34 @@
+# Apply after pluginctl creates `image-search-ingest`. pluginctl injects the
+# camera data-config and Waggle transport; this patch adds lifecycle guarantees
+# which pluginctl's CLI does not currently expose.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: image-search-ingest
+  namespace: default
+spec:
+  strategy:
+    type: Recreate
+  template:
+    spec:
+      # REQUIRED for CUDA. On this node the GPU is not a schedulable resource --
+      # `kubectl get node -o json` shows no nvidia.com/gpu in allocatable, only
+      # the label resource.gpu=true. Access comes from the `nvidia` RuntimeClass,
+      # and pluginctl does not set it. Verified on this node:
+      #   pod without runtimeClassName -> torch.cuda.is_available() == False
+      #   pod with    runtimeClassName -> True, "NVIDIA Thor"
+      # Without this the pod starts, REQUIRE_GPU=true refuses the silent CPU
+      # fallback, and the deployment CrashLoopBackOffs.
+      runtimeClassName: nvidia
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: image-search-ingest
+          livenessProbe:
+            exec:
+              command:
+                - python3
+                - /app/healthcheck.py
+            initialDelaySeconds: 90
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
