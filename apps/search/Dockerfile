@@ -11,7 +11,7 @@ ENV HF_HUB_OFFLINE=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/app \
     QDRANT_URL=http://127.0.0.1:6333 \
-    COLLECTION=edge_v4_live \
+    COLLECTION=edge_v3_live \
     EMBED_MODEL_DIR=/model/jina-clip-v2 \
     HF_HOME=/model/hf-cache \
     REQUIRE_GPU=true \
@@ -25,6 +25,7 @@ ENV HF_HUB_OFFLINE=1 \
     CANDIDATES_PER_LEG=100 \
     SEARCH_MAX_CONCURRENCY=1 \
     SEARCH_REQUEST_TIMEOUT_SECONDS=60 \
+    REQUIRE_ACCESSIBLE_IMAGES=true \
     LOG_LEVEL=INFO \
     LOG_FORMAT=json
 

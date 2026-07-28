@@ -3,8 +3,8 @@
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INGEST_IMAGE="${INGEST_IMAGE:-10.31.81.1:5000/local/image-search-ingest:0.3.3}"
-SEARCH_IMAGE="${SEARCH_IMAGE:-10.31.81.1:5000/local/image-search-api:0.3.3}"
+INGEST_IMAGE="${INGEST_IMAGE:-10.31.81.1:5000/local/image-search-ingest:0.3.4}"
+SEARCH_IMAGE="${SEARCH_IMAGE:-10.31.81.1:5000/local/image-search-api:0.3.4}"
 PUSH="${PUSH:-true}"
 
 docker build \

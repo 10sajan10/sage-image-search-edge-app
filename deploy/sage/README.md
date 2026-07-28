@@ -25,7 +25,7 @@ host-loopback Qdrant or Ollama URL unless the dependency is in the same pod.
 ## Option A: long-running ingestion
 
 Use this for frequent sampling. Jina remains loaded between captures, and
-`CAPTURE_INTERVAL_SECONDS` controls the sampling interval.
+`CAPTURE_INTERVAL_SECONDS=180` captures one frame every three minutes.
 
 Copy `ingest.env.example` outside Git and replace its placeholders. The file
 must contain only `KEY=VALUE` lines because `pluginctl --env-from` rejects
@@ -35,7 +35,7 @@ comments and blank lines.
 MODEL_ROOT=/home/sajanneupane137/models \
 ENV_FILE=/home/sajanneupane137/.config/sage-image-search/ingest-h01e.env \
 scripts/deploy-ingest.sh \
-10.31.81.1:5000/local/image-search-ingest:0.3.3
+10.31.81.1:5000/local/image-search-ingest:0.3.4
 ```
 
 The script submits the environment at deployment time, then applies
@@ -64,10 +64,10 @@ Runtime values belong in the submitted job's `pluginSpec.env` map:
 
 ```yaml
 pluginSpec:
-  image: registry.example/image-search-ingest:0.3.3
+  image: registry.example/image-search-ingest:0.3.4
   env:
     RUN_MODE: "oneshot"
-    COLLECTION: "edge_v4_live"
+    COLLECTION: "edge_v3_live"
     QDRANT_URL: "http://qdrant.example:6333"
     CAMERA: "{secret.image-search-ingest.CAMERA}"
 ```
@@ -80,12 +80,12 @@ references have the form
 selected at submission time, use the checked-in helper:
 
 ```bash
-INGEST_IMAGE=registry.example/image-search-ingest:0.3.3 \
+INGEST_IMAGE=registry.example/image-search-ingest:0.3.4 \
 NODE_ID=H01E \
 QDRANT_URL=http://qdrant.example:6333 \
 OLLAMA_URL=http://ollama.example:11434 \
-COLLECTION=edge_v4_live \
-SCHEDULE='*/5 * * * *' \
+COLLECTION=edge_v3_live \
+SCHEDULE='*/3 * * * *' \
 scripts/submit-ingest-job.sh
 ```
 
@@ -119,15 +119,19 @@ secret from `search-secret.example.yaml` outside Git, or reuse an existing
 
 ```bash
 MODEL_ROOT=/home/sajanneupane137/models \
+DATA_ROOT=/var/lib/sage-image-search \
 CONFIG_FILE=/home/sajanneupane137/.config/sage-image-search/search-config-h01e.yaml \
 SECRET_FILE=/home/sajanneupane137/.config/sage-image-search/search-secret-h01e.yaml \
 scripts/deploy-search.sh \
-10.31.81.1:5000/local/image-search-api:0.3.3
+10.31.81.1:5000/local/image-search-api:0.3.4
 ```
 
 The Deployment declares `replicas: 1`; Kubernetes restarts the process after a
 failure or node restart. The deploy helper also explicitly restores it to one
-replica.
+replica. The ingest data directory is mounted at `/data` read-only, so the API
+can verify that each returned `image_path` exists without allowing search to
+modify captured frames. `REQUIRE_ACCESSIBLE_IMAGES=true` excludes stale
+Qdrant records and reports their count as `skipped_unavailable_images`.
 
 Check and query it:
 

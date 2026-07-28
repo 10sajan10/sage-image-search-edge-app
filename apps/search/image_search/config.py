@@ -76,7 +76,7 @@ class CommonConfig:
 
     @classmethod
     def from_env(cls) -> "CommonConfig":
-        collection = env("COLLECTION", "edge_v4_live")
+        collection = env("COLLECTION", "edge_v3_live")
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,254}", collection):
             raise ValueError(f"COLLECTION contains unsupported characters: {collection!r}")
         return cls(
@@ -262,6 +262,7 @@ class SearchConfig:
     candidates_per_leg: int
     max_concurrency: int
     request_timeout_seconds: int
+    require_accessible_images: bool
     api_key: str
 
     @classmethod
@@ -285,6 +286,9 @@ class SearchConfig:
             request_timeout_seconds=env_int(
                 "SEARCH_REQUEST_TIMEOUT_SECONDS", 60, minimum=1
             ),
+            require_accessible_images=env_bool(
+                "REQUIRE_ACCESSIBLE_IMAGES", True
+            ),
             api_key=env("SEARCH_API_KEY"),
         )
 
@@ -299,5 +303,6 @@ class SearchConfig:
             "candidates_per_leg": self.candidates_per_leg,
             "max_concurrency": self.max_concurrency,
             "request_timeout_seconds": self.request_timeout_seconds,
+            "require_accessible_images": self.require_accessible_images,
             "authentication_enabled": bool(self.api_key),
         }

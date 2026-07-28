@@ -76,7 +76,7 @@ class CommonConfig:
 
     @classmethod
     def from_env(cls) -> "CommonConfig":
-        collection = env("COLLECTION", "edge_v4_live")
+        collection = env("COLLECTION", "edge_v3_live")
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,254}", collection):
             raise ValueError(f"COLLECTION contains unsupported characters: {collection!r}")
         return cls(

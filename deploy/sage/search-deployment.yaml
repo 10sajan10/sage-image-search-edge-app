@@ -33,7 +33,7 @@ spec:
       containers:
         - name: search-api
           # Replace with the exact immutable ECR tag for apps/search/sage.yaml.
-          image: registry.sagecontinuum.org/USERNAME/sage-image-search-api:0.3.3
+          image: registry.sagecontinuum.org/USERNAME/sage-image-search-api:0.3.4
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
@@ -74,6 +74,9 @@ spec:
             - name: models
               mountPath: /model
               readOnly: true
+            - name: image-data
+              mountPath: /data
+              readOnly: true
             - name: tmp
               mountPath: /tmp
       volumes:
@@ -81,6 +84,11 @@ spec:
           hostPath:
             # Provision jina-clip-v2 and hf-cache below this host path first.
             path: /opt/sage/image-search-models
+            type: Directory
+        - name: image-data
+          hostPath:
+            # The ingest app writes frames below this same host directory.
+            path: /var/lib/sage-image-search
             type: Directory
         - name: tmp
           emptyDir: {}

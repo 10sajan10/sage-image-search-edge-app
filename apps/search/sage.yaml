@@ -1,5 +1,5 @@
 name: "sage-image-search-api"
-version: "0.3.3"
+version: "0.3.4"
 description: "Always-running authenticated hybrid image-search API backed by Qdrant."
 keywords: "image-search,semantic-search,jina-clip,qdrant,bm25,fastapi,edge-ai,thor"
 authors: "Sajan Neupane"

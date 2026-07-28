@@ -3,7 +3,7 @@ name: image-search-ingest-h01e
 plugins:
   - name: image-search-ingest-once
     pluginSpec:
-      image: registry.sagecontinuum.org/USERNAME/sage-image-search-ingest:0.3.3
+      image: registry.sagecontinuum.org/USERNAME/sage-image-search-ingest:0.3.4
       selector:
         resource.gpu: "true"
       resource:
@@ -19,7 +19,7 @@ plugins:
         CAMERA_ID: "rtsp-main"
         NODE_ID: "H01E"
         QDRANT_URL: "http://QDRANT_PRIVATE_HOST:6333"
-        COLLECTION: "edge_v4_live"
+        COLLECTION: "edge_v3_live"
         OLLAMA_URL: "http://OLLAMA_PRIVATE_HOST:11434"
         CAPTION_MODEL: "gemma4:e2b"
         EMBED_MODEL_DIR: "/model/jina-clip-v2"
@@ -32,6 +32,6 @@ plugins:
 nodes:
   H01E: true
 scienceRules:
-  - 'schedule(image-search-ingest-once): cronjob("image-search-ingest-once", "*/5 * * * *")'
+  - 'schedule(image-search-ingest-once): cronjob("image-search-ingest-once", "*/3 * * * *")'
 successCriteria:
   - WallClock(1d)

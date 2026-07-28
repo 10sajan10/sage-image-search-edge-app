@@ -7,6 +7,9 @@ over image embeddings, caption embeddings, and BM25.
 Default fusion proportions come from `WEIGHT_IMAGE`, `WEIGHT_CAPTION`, and
 `WEIGHT_BM25`. Every `/search` request may override them.
 
+With `REQUIRE_ACCESSIBLE_IMAGES=true`, stale Qdrant records whose
+`image_path` is absent from the read-only `/data` mount are excluded.
+
 This folder owns:
 
 - `sage.yaml` — ECR metadata pointing at this directory as the source.
@@ -20,7 +23,7 @@ Build from this directory:
 
 ```bash
 cd apps/search
-docker build -t 10.31.81.1:5000/local/image-search-api:0.3.3 .
+docker build -t 10.31.81.1:5000/local/image-search-api:0.3.4 .
 ```
 
 In this monorepo, `sage.yaml` sets `source.directory: apps/search`. If this
@@ -39,12 +42,14 @@ docker run -d \
   --network host \
   --env-file /secure/path/search.env \
   -v /home/sajanneupane137/models:/model:ro \
-  10.31.81.1:5000/local/image-search-api:0.3.3
+  -v /var/lib/sage-image-search:/data:ro \
+  10.31.81.1:5000/local/image-search-api:0.3.4
 ```
 
 Values passed through `--env-file` override Dockerfile defaults. The
 Kubernetes Deployment instead provides the same variables through its
-ConfigMap and Secret.
+ConfigMap and Secret. It mounts the ingest frame store at `/data` read-only,
+so returned `image_path` values resolve inside the search container.
 
 Kubernetes runs this image with one replica behind the private
 `image-search-api` ClusterIP Service. It is not a scheduled Sage job.

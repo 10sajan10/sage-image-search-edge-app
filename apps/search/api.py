@@ -86,7 +86,7 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(
     title="Sage Image Search API",
-    version="0.3.3",
+    version="0.3.4",
     description="Weighted image, caption, and BM25 search over a fixed Qdrant collection.",
     lifespan=lifespan,
 )

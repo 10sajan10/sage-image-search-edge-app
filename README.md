@@ -99,8 +99,9 @@ The ingestion image has two explicit modes.
 RUN_MODE=daemon
 ```
 
-The process remains warm and captures every `CAPTURE_INTERVAL_SECONDS`. Use
-this for frequent sampling because Jina is loaded only once. The production
+The process remains warm and captures every `CAPTURE_INTERVAL_SECONDS` (180
+seconds by default). Use this for frequent sampling because Jina is loaded
+only once. The production
 Deployment uses `Recreate` so two pods never open the camera concurrently.
 
 ### One-shot job mode
@@ -120,7 +121,7 @@ Runtime values can be supplied in a Sage job:
 plugins:
   - name: image-search-ingest-once
     pluginSpec:
-      image: registry.sagecontinuum.org/USERNAME/sage-image-search-ingest:0.3.3
+      image: registry.sagecontinuum.org/USERNAME/sage-image-search-ingest:0.3.4
       selector:
         resource.gpu: "true"
       env:
@@ -129,7 +130,7 @@ plugins:
         CAMERA: "{secret.image-search-ingest.CAMERA}"
         CAMERA_ID: "rtsp-main"
         QDRANT_URL: "http://QDRANT_PRIVATE_HOST:6333"
-        COLLECTION: "edge_v4_live"
+        COLLECTION: "edge_v3_live"
         OLLAMA_URL: "http://OLLAMA_PRIVATE_HOST:11434"
 ```
 
@@ -142,11 +143,11 @@ node. The complete example is
 the time of submission, use the repository helper:
 
 ```bash
-INGEST_IMAGE=registry.example/image-search-ingest:0.3.3 \
+INGEST_IMAGE=registry.example/image-search-ingest:0.3.4 \
 QDRANT_URL=http://qdrant.example:6333 \
 OLLAMA_URL=http://ollama.example:11434 \
-COLLECTION=edge_v4_live \
-SCHEDULE='*/5 * * * *' \
+COLLECTION=edge_v3_live \
+SCHEDULE='*/3 * * * *' \
 scripts/submit-ingest-job.sh
 ```
 
@@ -214,7 +215,9 @@ Content-Type: application/json
 ```
 
 The response includes fused and per-leg scores, Qdrant raw scores, caption,
-timestamp, node, camera, image ID, and the persistent image path.
+timestamp, node, camera, image ID, and the persistent image path. Search mounts
+the ingest frame store read-only and, by default, skips records whose image
+file is no longer available.
 
 Endpoints:
 
@@ -235,15 +238,15 @@ PUSH=true scripts/build-apps.sh
 Defaults:
 
 ```text
-10.31.81.1:5000/local/image-search-ingest:0.3.3
-10.31.81.1:5000/local/image-search-api:0.3.3
+10.31.81.1:5000/local/image-search-ingest:0.3.4
+10.31.81.1:5000/local/image-search-api:0.3.4
 ```
 
 Override tags when publishing elsewhere:
 
 ```bash
-INGEST_IMAGE=registry.example/image-search-ingest:0.3.3 \
-SEARCH_IMAGE=registry.example/image-search-api:0.3.3 \
+INGEST_IMAGE=registry.example/image-search-ingest:0.3.4 \
+SEARCH_IMAGE=registry.example/image-search-api:0.3.4 \
 PUSH=true \
 scripts/build-apps.sh
 ```
@@ -255,8 +258,8 @@ Docker build context.
 Build either app independently:
 
 ```bash
-(cd apps/ingest && docker build -t image-search-ingest:0.3.3 .)
-(cd apps/search && docker build -t image-search-api:0.3.3 .)
+(cd apps/ingest && docker build -t image-search-ingest:0.3.4 .)
+(cd apps/search && docker build -t image-search-api:0.3.4 .)
 ```
 
 ## Docker environment values
@@ -289,16 +292,17 @@ The node-specific secret-bearing files are outside Git under
 MODEL_ROOT=/home/sajanneupane137/models \
 ENV_FILE=/home/sajanneupane137/.config/sage-image-search/ingest-h01e.env \
 scripts/deploy-ingest.sh \
-10.31.81.1:5000/local/image-search-ingest:0.3.3
+10.31.81.1:5000/local/image-search-ingest:0.3.4
 ```
 
 ### Always-running search
 
 ```bash
 MODEL_ROOT=/home/sajanneupane137/models \
+DATA_ROOT=/var/lib/sage-image-search \
 CONFIG_FILE=/home/sajanneupane137/.config/sage-image-search/search-config-h01e.yaml \
 scripts/deploy-search.sh \
-10.31.81.1:5000/local/image-search-api:0.3.3
+10.31.81.1:5000/local/image-search-api:0.3.4
 ```
 
 `deploy-search.sh` requires an existing `image-search-secret`, or a
@@ -353,9 +357,9 @@ Both Docker builds run the same tests during image creation. Full acceptance:
 
 ```bash
 scripts/e2e.sh \
-  10.31.81.1:5000/local/image-search-ingest:0.3.3 \
-  10.31.81.1:5000/local/image-search-api:0.3.3
+  10.31.81.1:5000/local/image-search-ingest:0.3.4 \
+  10.31.81.1:5000/local/image-search-api:0.3.4
 ```
 
 The acceptance test uses a uniquely named temporary Qdrant collection and
-never modifies `edge_v4_live`.
+never modifies `edge_v3_live`.

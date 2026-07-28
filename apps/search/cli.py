@@ -98,6 +98,14 @@ def print_results(result: dict) -> None:
         )
         if caption:
             print(f"    {caption}")
+        image_path = item.get("image_path")
+        if image_path:
+            availability = (
+                "available"
+                if item.get("image_available")
+                else "not available in search container"
+            )
+            print(f"    path: {image_path} ({availability})")
 
 
 def main() -> int:

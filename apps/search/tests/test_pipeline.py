@@ -38,7 +38,7 @@ class FakeStore:
         return self.points[using]
 
 
-def search_config() -> SearchConfig:
+def search_config(require_accessible_images: bool = False) -> SearchConfig:
     common = CommonConfig(
         qdrant_url="http://qdrant:6333",
         collection="test",
@@ -61,6 +61,7 @@ def search_config() -> SearchConfig:
         candidates_per_leg=20,
         max_concurrency=1,
         request_timeout_seconds=10,
+        require_accessible_images=require_accessible_images,
         api_key="",
     )
 
@@ -86,6 +87,33 @@ def test_weighted_search_returns_explainable_scores() -> None:
     }
     assert result["results"][0]["raw_scores"]["bm25"] == 2.0
     assert result["results"][0]["caption"] == "fire"
+
+
+def test_search_reports_when_image_path_is_accessible(tmp_path: Path) -> None:
+    image_path = tmp_path / "frame.jpg"
+    image_path.write_bytes(b"jpeg")
+    store = FakeStore()
+    store.points["image"][0]["payload"]["image_path"] = str(image_path)
+    engine = SearchEngine(
+        search_config(require_accessible_images=True), store, FakeEmbedder()
+    )
+
+    result = engine.search("wildfire", 1)
+
+    assert result["results"][0]["image_path"] == str(image_path)
+    assert result["results"][0]["image_available"] is True
+
+
+def test_search_skips_unavailable_image_paths() -> None:
+    store = FakeStore()
+    engine = SearchEngine(
+        search_config(require_accessible_images=True), store, FakeEmbedder()
+    )
+
+    result = engine.search("wildfire", 2)
+
+    assert result["returned"] == 0
+    assert result["skipped_unavailable_images"] == 2
 
 
 def test_zero_weight_skips_leg_and_filters_are_forwarded() -> None:

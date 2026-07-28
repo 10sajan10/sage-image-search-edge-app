@@ -7,7 +7,7 @@ with Jina CLIP v2, and performs idempotent Qdrant upserts.
 It supports two runtime modes:
 
 - `RUN_MODE=daemon`: remain running and capture every
-  `CAPTURE_INTERVAL_SECONDS`.
+  `CAPTURE_INTERVAL_SECONDS` (180 seconds by default).
 - `RUN_MODE=oneshot`: capture once (or perform one directory discovery cycle),
   drain pending work, and exit. Use this mode in a Sage scheduled job.
 
@@ -28,7 +28,7 @@ Build from this directory:
 
 ```bash
 cd apps/ingest
-docker build -t 10.31.81.1:5000/local/image-search-ingest:0.3.3 .
+docker build -t 10.31.81.1:5000/local/image-search-ingest:0.3.4 .
 ```
 
 In this monorepo, `sage.yaml` sets `source.directory: apps/ingest`. If this
@@ -48,7 +48,7 @@ docker run -d \
   --env-file /secure/path/ingest.env \
   -v /home/sajanneupane137/models:/model:ro \
   -v /var/lib/sage-image-search:/data \
-  10.31.81.1:5000/local/image-search-ingest:0.3.3
+  10.31.81.1:5000/local/image-search-ingest:0.3.4
 ```
 
 Values passed through `--env-file` override the Dockerfile `ENV` defaults.

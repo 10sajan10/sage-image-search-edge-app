@@ -527,10 +527,16 @@ class SearchEngine:
 
         ranked = sorted(
             fused.items(), key=lambda item: (-item[1]["score"], item[0])
-        )[:top_k]
+        )
         results = []
+        skipped_unavailable_images = 0
         for point_id, entry in ranked:
             payload = payloads.get(point_id, {})
+            image_path = payload.get("image_path")
+            image_available = bool(image_path and Path(image_path).is_file())
+            if self.config.require_accessible_images and not image_available:
+                skipped_unavailable_images += 1
+                continue
             results.append(
                 {
                     "id": point_id,
@@ -538,7 +544,8 @@ class SearchEngine:
                     "scores": entry["scores"],
                     "raw_scores": entry["raw_scores"],
                     "image_id": payload.get("image_id"),
-                    "image_path": payload.get("image_path"),
+                    "image_path": image_path,
+                    "image_available": image_available,
                     "source": payload.get("source"),
                     "node_id": payload.get("node_id"),
                     "camera_id": payload.get("camera_id"),
@@ -546,6 +553,8 @@ class SearchEngine:
                     "caption": payload.get("caption"),
                 }
             )
+            if len(results) >= top_k:
+                break
         return {
             "query": query,
             "weights_used": {
@@ -553,6 +562,7 @@ class SearchEngine:
             },
             "legs_queried": sorted(raw_by_leg),
             "candidates_considered": len(fused),
+            "skipped_unavailable_images": skipped_unavailable_images,
             "returned": len(results),
             "took_ms": round((time.time() - started) * 1000, 1),
             "results": results,

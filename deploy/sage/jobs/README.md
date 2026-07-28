@@ -12,7 +12,7 @@ environment into a temporary job document before calling `sesctl`.
 Required submission values:
 
 ```bash
-INGEST_IMAGE=registry.example/image-search-ingest:0.3.3
+INGEST_IMAGE=registry.example/image-search-ingest:0.3.4
 QDRANT_URL=http://qdrant.example:6333
 OLLAMA_URL=http://ollama.example:11434
 ```
@@ -21,8 +21,8 @@ Common optional values:
 
 ```bash
 NODE_ID=H01E
-COLLECTION=edge_v4_live
-SCHEDULE='*/5 * * * *'
+COLLECTION=edge_v3_live
+SCHEDULE='*/3 * * * *'
 CAMERA_SECRET_NAME=image-search-ingest
 CAMERA_SECRET_KEY=CAMERA
 MODEL_ROOT=/opt/sage/image-search-models

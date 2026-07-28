@@ -1,5 +1,5 @@
 name: "sage-image-search-ingest"
-version: "0.3.3"
+version: "0.3.4"
 description: "Schedulable Sage camera ingestion into a durable hybrid image-search collection."
 keywords: "camera,image-ingestion,captioning,jina-clip,qdrant,edge-ai,thor"
 authors: "Sajan Neupane"

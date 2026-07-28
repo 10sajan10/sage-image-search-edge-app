@@ -4,7 +4,7 @@ set -euo pipefail
 
 QDRANT_URL="${QDRANT_URL:?QDRANT_URL is required}"
 OLLAMA_URL="${OLLAMA_URL:?OLLAMA_URL is required}"
-COLLECTION="${COLLECTION:-edge_v4_live}"
+COLLECTION="${COLLECTION:-edge_v3_live}"
 CAPTION_MODEL="${CAPTION_MODEL:-gemma4:e2b}"
 
 python3 - "$QDRANT_URL" "$OLLAMA_URL" "$COLLECTION" "$CAPTION_MODEL" <<'PY'
