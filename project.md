@@ -1,4 +1,4 @@
-# Architecture — Image Search at the Edge
+Image Search at the Edge
 
 Image Search at the Edge is an offline-first, multimodal image-search system that runs
 entirely on a single **NVIDIA Jetson AGX Thor**. Every image is stored as several
