@@ -1,0 +1,67 @@
+# Sage / Waggle app manifest.
+#
+# Field list verified against sage-ecr's own config.py (the ECR service that
+# consumes this file):
+#   valid:    namespace name version description keywords authors collaborators
+#             homepage funding license source depends_on baseCommand arguments
+#             inputs resources metadata frozen testing
+#   REQUIRED: description (str), source (dict)   <- only these two are enforced
+#   source.*: architectures url branch tag git_commit directory dockerfile build_args
+name: "sage-image-search-edge-app"
+version: "0.1.0"
+description: "Semantic image search at the edge: captions frames with a local VLM (Ollama gemma4:e2b), embeds image and caption with jina-clip-v2 into 1024-dim vectors, and indexes them in Qdrant alongside a BM25 sparse vector for weighted hybrid retrieval."
+keywords: "image-search,vision-language-model,semantic-search,clip,qdrant,bm25,hybrid-search,edge-ai,thor"
+authors: "Sajan Neupane"
+collaborators: ""
+funding: ""
+license: ""
+homepage: ""
+
+source:
+  architectures:
+    # arm64 ONLY, deliberately. The nvcr.io/nvidia/pytorch base image is itself
+    # multi-arch, but this app targets Jetson Thor (sm_110) and carries
+    # Thor-specific load flags (use_text_flash_attn=False, because triton's
+    # ptxas rejects sm_110 when building flash-attn's rotary kernel). An amd64
+    # build would produce an image that cannot do what this app is for.
+    - "linux/arm64"
+  # ECR builds from git, so publishing requires this to point at the repo.
+  # `pluginctl build .` works locally without it -- it builds the working
+  # directory directly -- but ECR registration will need it filled in.
+  url: ""
+  # Optional, useful if the app is ever nested in a monorepo:
+  #   directory: "image-search-app"
+  #   dockerfile: "Dockerfile"
+
+# GPU is required, not optional: jina-clip-v2 embedding runs on CUDA. On CPU it
+# still functions but is orders of magnitude slower (main.py warns loudly).
+resources:
+  - type: gpu
+
+# NOTE ON CONFIGURATION
+# This app is configured entirely by ENVIRONMENT VARIABLES, not CLI arguments,
+# so there is no `inputs:`/`arguments:` block. Pass them with `pluginctl run -e`
+# / `--env-from`, or `docker run -e`. Run with SHOW_CONFIG=1 to print the
+# resolved configuration and exit.
+#
+#   shared by both roles (MUST match, or search reads a different collection
+#   than populate wrote):
+#     QDRANT_URL EMBED_MODEL_DIR COLLECTION VECTOR_DIM BM25_MODEL
+#
+#   populate (main.py, the default ENTRYPOINT):
+#     OLLAMA_URL CAPTION_MODEL CAPTION_TARGET_WORDS CAPTION_TEMPERATURE
+#     CAPTION_THINK CAPTION_TIMEOUT CAPTION_NUM_CTX CAPTION_NUM_PREDICT
+#     IMAGE_DIR IMAGE_GLOB MAX_IMAGES              (batch mode)
+#     CAMERA CAPTURE_INTERVAL_SECONDS FRAME_DIR MAX_FRAMES   (live/RTSP mode --
+#                                     setting CAMERA switches modes)
+#     STATE_PATH ERRORS_PATH RETRIES MAX_IMAGE_EDGE PUBLISH_TO_BEEHIVE
+#
+#   search (search.py, run with --entrypoint python3 ... search.py):
+#     SEARCH_HOST SEARCH_PORT WEIGHT_IMAGE WEIGHT_CAPTION WEIGHT_BM25
+#     DEFAULT_TOP_K MAX_TOP_K CANDIDATES_PER_LEG
+#
+# ONE IMAGE, TWO ROLES: populate is the default entrypoint; the search API is
+# the same image started with a different command. ECR's `baseCommand` field
+# can express that if the search role is ever registered separately -- but note
+# the plugin model has no inbound networking, so the search API is intended to
+# run as an ordinary container, not as a scheduled plugin.
