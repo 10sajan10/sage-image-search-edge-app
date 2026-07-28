@@ -9,6 +9,15 @@ metadata:
 spec:
   strategy:
     type: Recreate
+    # rollingUpdate MUST be explicitly nulled. Kubernetes defaults every
+    # Deployment to RollingUpdate with a populated rollingUpdate block, and a
+    # strategic-merge patch MERGES rather than replaces -- leaving both set,
+    # which the API server rejects:
+    #   spec.strategy.rollingUpdate: Forbidden: may not be specified when
+    #   strategy `type` is 'Recreate'
+    # The whole patch is then rejected, so runtimeClassName, the grace period
+    # and the liveness probe would all silently fail to apply too.
+    rollingUpdate: null
   template:
     spec:
       # REQUIRED for CUDA. On this node the GPU is not a schedulable resource --
