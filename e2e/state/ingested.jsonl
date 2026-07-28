@@ -1,9 +1,5 @@
-{"image_id": "testset/cloudbench_1703624418427496143-sample.jpg", "caption_words": 259, "done_reason": "length"}
-{"image_id": "testset/cloudbench_1708999217978133788-sample.jpg", "caption_words": 262, "done_reason": "length"}
-{"image_id": "testset/cloudbench_1710288017119652866-sample.jpg", "caption_words": 258, "done_reason": "length"}
-{"image_id": "testset/commonobjectsbench_000000001238.jpg", "caption_words": 259, "done_reason": "length"}
-{"image_id": "testset/commonobjectsbench_000000019387.jpg", "caption_words": 266, "done_reason": "stop"}
-{"image_id": "testset/commonobjectsbench_000000023283.jpg", "caption_words": 247, "done_reason": "length"}
-{"image_id": "testset/firebench_34182404715_6454a87316_o.jpg", "caption_words": 257, "done_reason": "length"}
-{"image_id": "testset/firebench_36340658435_4c5de984de_o.jpg", "caption_words": 259, "done_reason": "length"}
-{"image_id": "testset/firebench_43251633862_c4da756e5f_o.jpg", "caption_words": 244, "done_reason": "length"}
+{"image_id": "cloud1.jpg", "caption_words": 263, "done_reason": "length"}
+{"image_id": "fire1.jpg", "caption_words": 261, "done_reason": "length"}
+{"image_id": "obj1.jpg", "caption_words": 254, "done_reason": "length"}
+{"image_id": "cloud2.jpg", "caption_words": 274, "done_reason": "length"}
+{"image_id": "fire2.jpg", "caption_words": 261, "done_reason": "length"}
