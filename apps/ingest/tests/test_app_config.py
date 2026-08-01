@@ -54,3 +54,10 @@ def test_default_top_k_cannot_exceed_maximum(monkeypatch) -> None:
         assert "DEFAULT_TOP_K" in str(error)
     else:
         raise AssertionError("DEFAULT_TOP_K greater than MAX_TOP_K was accepted")
+
+
+def test_heartbeat_interval_stays_below_healthcheck_max_age(monkeypatch) -> None:
+    monkeypatch.setenv("CAPTURE_SOURCE", "directory")
+
+    # healthcheck.py fails the liveness probe at HEARTBEAT_MAX_AGE_SECONDS=30.
+    assert IngestConfig.from_env().heartbeat_interval_seconds < 30

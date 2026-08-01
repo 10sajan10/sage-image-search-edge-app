@@ -84,7 +84,7 @@ class CommonConfig:
             collection=collection,
             vector_dim=env_int("VECTOR_DIM", 1024, minimum=1),
             bm25_model=env("BM25_MODEL", "Qdrant/bm25"),
-            embed_model_dir=Path(env("EMBED_MODEL_DIR", "/model/weights/jina-clip-v2")),
+            embed_model_dir=Path(env("EMBED_MODEL_DIR", "/model/jina-clip-v2")),
             node_id=env("NODE_ID", os.environ.get("WAGGLE_NODE_ID", socket.gethostname())),
             camera_id=env("CAMERA_ID", "camera"),
             require_gpu=env_bool("REQUIRE_GPU", True),

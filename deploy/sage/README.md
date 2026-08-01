@@ -10,6 +10,49 @@ This directory deploys two separate images:
 Both workloads use the same Qdrant collection and Jina model contract. Only
 ingestion needs the camera, Ollama, frame storage, and durable spool.
 
+## Versions and image tags
+
+`apps/<role>/sage.yaml:version` is the single source of truth. Both apps are
+released together on one version because they share one Qdrant collection
+contract. That version appears in four kinds of place:
+
+| Where | What it means |
+| --- | --- |
+| `apps/*/sage.yaml` `version:` | the release Sage ECR builds and tags |
+| `apps/search/api.py` `version=` | what `/openapi.json` advertises to clients |
+| image tags in `deploy/` and `scripts/` | which build a manifest deploys |
+| `COLLECTION` (`edge_v3_live`) | the *data* contract — deliberately not the app version |
+
+`COLLECTION` is versioned separately and on purpose: app releases are frequent
+and backward compatible, whereas changing the embedding model or vector schema
+is a migration that needs a new collection name. Bumping the app version must
+never require re-indexing.
+
+Nothing generates these references, so bump `apps/*/sage.yaml` first and then
+run the checker, which reports every reference still on the old tag:
+
+```bash
+python3 scripts/check-versions.py
+python3 scripts/check-app-sync.py
+```
+
+## Building for Thor (arm64)
+
+Sage ECR builds `linux/arm64` under QEMU emulation on an amd64 host, and that
+emulation aborts when an `nvcr.io/nvidia/pytorch` image runs `import torch`
+during a `RUN` step — which these Dockerfiles do deliberately, to pin torch,
+torchvision, and NumPy to the base image's NVIDIA-compiled builds. Until Sage
+offers a native arm64 builder, build on the node itself and import into k3s:
+
+```bash
+sudo docker build -t image-search-ingest:0.3.4 apps/ingest
+sudo docker save image-search-ingest:0.3.4 | sudo k3s ctr images import -
+```
+
+Do not remove the pinning to make an ECR build pass. Generic PyPI torch has no
+Thor (`sm_110`) kernels and silently falls back to CPU, and a transitive NumPy
+2.x upgrade breaks torch's NumPy 1.x C ABI at runtime.
+
 ## Prerequisites
 
 - Both images have been built and pushed to a registry visible from the node.
@@ -41,6 +84,17 @@ scripts/deploy-ingest.sh \
 The script submits the environment at deployment time, then applies
 `ingest-production-patch.yaml`. The patch sets `Recreate`, the NVIDIA
 RuntimeClass, a termination grace period, and the ingest heartbeat probe.
+
+The heartbeat is written by a dedicated thread every
+`HEARTBEAT_INTERVAL_SECONDS` (10s), not by the ingestion loop, and
+`healthcheck.py` fails at `HEARTBEAT_MAX_AGE_SECONDS` (30s). This separation is
+required: captioning one frame is a blocking Ollama call bounded by
+`CAPTION_TIMEOUT` (300s) and retried with backoff, so a work-loop heartbeat
+would go stale during entirely healthy work and the liveness probe would
+restart the pod mid-caption, on every frame. The probe therefore answers "is
+this process alive"; the heartbeat file's `spool` and `runtime` counters
+answer "is it making progress". Keep the interval well below the max age if
+you tune either.
 
 Inspect it with Kubernetes because `pluginctl logs` expects a scheduler pod
 name and may not resolve a persistent Deployment:

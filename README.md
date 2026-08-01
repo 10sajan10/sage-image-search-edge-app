@@ -292,6 +292,43 @@ Runtime values override the Dockerfile defaults. Camera credentials and
 `SEARCH_API_KEY` are deliberately absent from Docker image layers. Kubernetes
 uses the same variables through `pluginSpec.env`, ConfigMaps, and Secrets.
 
+## Why Docker builds but k3s runs
+
+Docker and k3s are not alternatives here; they own different halves.
+
+Docker builds the images and runs the local acceptance test (`scripts/e2e.sh`)
+because that needs nothing but a machine with a GPU. Nothing in production is
+started with `docker run`.
+
+Sage edge nodes run k3s, and every deployment goes through it, for four
+reasons that `docker run` cannot cover:
+
+- **Restart and rescheduling.** A Deployment brings both workloads back after a
+  crash, an OOM kill, or a node reboot. `docker run --restart` survives neither
+  a reboot policy change nor a node the scheduler has drained.
+- **GPU access.** On this node the GPU is not a schedulable resource — there is
+  no `nvidia.com/gpu` in the node's allocatable list, only a `resource.gpu=true`
+  label. CUDA comes from the `nvidia` RuntimeClass, which is a Kubernetes
+  concept. That is why every manifest sets `runtimeClassName: nvidia`, and why
+  omitting it produces `torch.cuda.is_available() == False` and, with
+  `REQUIRE_GPU=true`, a deliberate CrashLoopBackOff instead of a silent
+  CPU fallback.
+- **Sage integration.** `pluginctl` injects the Waggle data-config and the
+  Beehive transport that `waggle.plugin.Plugin` and `Camera("bottom-camera")`
+  depend on, and `sesctl` schedules one-shot jobs from science rules. Both
+  produce Kubernetes objects. A hand-run container gets no camera alias and no
+  telemetry path.
+- **Secrets.** Camera credentials and `SEARCH_API_KEY` come from Kubernetes
+  Secrets and scheduler secret references, never from image layers or shell
+  history.
+
+The one gap is documented under "GPU limitation for remotely scheduled jobs" in
+[`deploy/sage/README.md`](deploy/sage/README.md): the scheduler's `pluginSpec`
+cannot set `runtimeClassName`, so remotely scheduled one-shot jobs need an
+administrator to configure default RuntimeClass injection. Until then the
+long-running `pluginctl deploy` path is the supported one, because its
+production patch sets the RuntimeClass explicitly.
+
 ## Deploy on H01E
 
 The node-specific secret-bearing files are outside Git under
@@ -362,6 +399,14 @@ Run local unit tests:
 ```bash
 (cd apps/ingest && python3 -m pytest -q)
 (cd apps/search && python3 -m pytest -q)
+```
+
+Check that the monorepo apps still match their standalone repositories, and
+that every version reference agrees with `apps/*/sage.yaml`:
+
+```bash
+python3 scripts/check-app-sync.py
+python3 scripts/check-versions.py
 ```
 
 Both Docker builds run the same tests during image creation. Full acceptance:

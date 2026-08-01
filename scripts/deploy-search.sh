@@ -41,12 +41,19 @@ if [ -n "$SECRET_FILE" ]; then
   sudo kubectl apply -f "$SECRET_FILE"
 fi
 
-sed \
-  -e "s|registry.sagecontinuum.org/USERNAME/sage-image-search-api:0.3.4|$IMAGE_REF|" \
-  -e "s|path: /opt/sage/image-search-models|path: $MODEL_ROOT|" \
-  -e "s|path: /var/lib/sage-image-search|path: $DATA_ROOT|" \
-  "$REPO_DIR/deploy/sage/search-deployment.yaml" \
-  | sudo kubectl apply -f -
+# Match the image line itself, not a literal tag: pinning the old tag here
+# meant that bumping search-deployment.yaml silently turned this substitution
+# into a no-op and deployed the manifest's placeholder image instead.
+rendered="$(
+  sed \
+    -e "s|^\( *image: \).*|\1$IMAGE_REF|" \
+    -e "s|path: /opt/sage/image-search-models|path: $MODEL_ROOT|" \
+    -e "s|path: /var/lib/sage-image-search|path: $DATA_ROOT|" \
+    "$REPO_DIR/deploy/sage/search-deployment.yaml"
+)"
+grep -qF "image: $IMAGE_REF" <<<"$rendered" \
+  || fail "failed to substitute the image reference into search-deployment.yaml"
+sudo kubectl apply -f - <<<"$rendered"
 
 sudo kubectl scale deployment/image-search-api --replicas=1
 sudo kubectl rollout status deployment/image-search-api --timeout=10m

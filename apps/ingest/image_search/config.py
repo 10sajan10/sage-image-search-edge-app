@@ -84,7 +84,7 @@ class CommonConfig:
             collection=collection,
             vector_dim=env_int("VECTOR_DIM", 1024, minimum=1),
             bm25_model=env("BM25_MODEL", "Qdrant/bm25"),
-            embed_model_dir=Path(env("EMBED_MODEL_DIR", "/model/weights/jina-clip-v2")),
+            embed_model_dir=Path(env("EMBED_MODEL_DIR", "/model/jina-clip-v2")),
             node_id=env("NODE_ID", os.environ.get("WAGGLE_NODE_ID", socket.gethostname())),
             camera_id=env("CAMERA_ID", "camera"),
             require_gpu=env_bool("REQUIRE_GPU", True),
@@ -178,6 +178,7 @@ class IngestConfig:
     exit_when_drained: bool
     publish_to_beehive: bool
     heartbeat_path: Path
+    heartbeat_interval_seconds: float
 
     @classmethod
     def from_env(cls) -> "IngestConfig":
@@ -226,6 +227,11 @@ class IngestConfig:
             heartbeat_path=Path(
                 env("HEARTBEAT_PATH", str(spool_dir / "heartbeat.json"))
             ),
+            # Must stay well below HEARTBEAT_MAX_AGE_SECONDS (30s) so a healthy
+            # process never trips the liveness probe between refreshes.
+            heartbeat_interval_seconds=env_float(
+                "HEARTBEAT_INTERVAL_SECONDS", 10.0, minimum=0.5
+            ),
         )
 
     def public_dict(self) -> dict:
@@ -248,6 +254,7 @@ class IngestConfig:
             "exit_when_drained": self.exit_when_drained,
             "publish_to_beehive": self.publish_to_beehive,
             "heartbeat_path": str(self.heartbeat_path),
+            "heartbeat_interval_seconds": self.heartbeat_interval_seconds,
         }
 
 

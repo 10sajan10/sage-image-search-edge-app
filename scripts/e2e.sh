@@ -27,7 +27,9 @@ cp "$REPO_DIR/e2e/images/testset/commonobjectsbench_000000001238.jpg" \
   "$WORK_DIR/images/elephant.jpg"
 
 common_args=(
-  --device nvidia.com/gpu=all
+  # Thor's NVIDIA Container Runtime Hook rejects the newer CDI/--gpus flags.
+  # --runtime=nvidia is the path that works on both Thor and DGX Spark.
+  --runtime=nvidia
   --network host
   -v "$MODEL_ROOT:/model:ro"
   -e HF_HOME=/model/hf-cache

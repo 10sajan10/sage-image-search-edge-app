@@ -17,6 +17,50 @@ IGNORED_NAMES = {
     "__pycache__",
     "sage.yaml",
 }
+# sage.yaml cannot be compared byte-for-byte -- these three keys name the
+# repository the image is built from and are legitimately different. Every
+# other key, `version` above all, is the deployment contract and must match.
+SAGE_REPO_SPECIFIC_KEYS = {"homepage", "url", "directory"}
+
+
+def sage_yaml_contract(path: Path) -> list[str]:
+    """Flatten sage.yaml to comparable lines, dropping repo-specific keys."""
+    lines = []
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        key = line.split(":", 1)[0].strip().lstrip("- ").strip('"')
+        if key in SAGE_REPO_SPECIFIC_KEYS:
+            continue
+        lines.append(line)
+    return lines
+
+
+def compare_sage_yaml(role: str, standalone: Path) -> list[str]:
+    source = ROOT / "apps" / role / "sage.yaml"
+    target = standalone / "sage.yaml"
+    if not target.is_file():
+        return [f"{role}: standalone sage.yaml not found: {target}"]
+    expected = sage_yaml_contract(source)
+    actual = sage_yaml_contract(target)
+    if expected == actual:
+        return []
+    return [
+        f"{role}: sage.yaml contract differs (ignoring "
+        f"{sorted(SAGE_REPO_SPECIFIC_KEYS)}):\n"
+        + "\n".join(
+            f"    - monorepo:   {line}"
+            for line in expected
+            if line not in actual
+        )
+        + "\n"
+        + "\n".join(
+            f"    - standalone: {line}"
+            for line in actual
+            if line not in expected
+        )
+    ]
 
 
 def comparable_files(root: Path) -> dict[Path, Path]:
@@ -46,6 +90,7 @@ def compare(role: str, standalone: Path) -> list[str]:
             errors.append(f"{role}: missing standalone file: {relative}")
         elif digest(source_files[relative]) != digest(standalone_files[relative]):
             errors.append(f"{role}: content differs: {relative}")
+    errors.extend(compare_sage_yaml(role, standalone))
     return errors
 
 
@@ -73,7 +118,10 @@ def main() -> int:
         return 1
 
     print("App sources match both standalone repositories.")
-    print("README.md, sage.yaml, and repository metadata are intentionally excluded.")
+    print(
+        "README.md and repository metadata are intentionally excluded; "
+        f"sage.yaml is compared except for {sorted(SAGE_REPO_SPECIFIC_KEYS)}."
+    )
     return 0
 
 

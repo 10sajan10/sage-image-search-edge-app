@@ -53,6 +53,7 @@ def config(tmp_path: Path) -> IngestConfig:
         exit_when_drained=True,
         publish_to_beehive=False,
         heartbeat_path=tmp_path / "heartbeat.json",
+        heartbeat_interval_seconds=10.0,
     )
 
 

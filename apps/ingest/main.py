@@ -77,6 +77,32 @@ def write_heartbeat(
     )
 
 
+def run_heartbeat(
+    config: IngestConfig,
+    spool: DurableSpool,
+    stop_event: threading.Event,
+    source_status: dict,
+    runtime: dict,
+) -> None:
+    """Refresh the liveness heartbeat on a fixed cadence.
+
+    This must not run on the ingestion loop. Captioning a single frame is a
+    blocking Ollama call bounded by CAPTION_TIMEOUT (300s by default) and
+    retried with backoff, so a work-loop heartbeat goes stale during entirely
+    healthy work and the liveness probe restarts the pod mid-caption -- for
+    every frame. The heartbeat answers "is this process alive", and the
+    payload's spool/runtime counters answer "is it making progress".
+    """
+    while not stop_event.is_set():
+        try:
+            write_heartbeat(config, spool, source_status, runtime)
+        except OSError as error:
+            LOGGER.warning(
+                "could not write heartbeat", extra={"error": str(error)}
+            )
+        stop_event.wait(config.heartbeat_interval_seconds)
+
+
 def run() -> int:
     config = IngestConfig.from_env()
     LOGGER.info("resolved ingest configuration", extra={"config": config.public_dict()})
@@ -121,6 +147,14 @@ def run() -> int:
         daemon=True,
     )
     source_thread.start()
+
+    heartbeat_thread = threading.Thread(
+        name="heartbeat",
+        target=run_heartbeat,
+        args=(config, spool, stop_event, source_status, runtime),
+        daemon=True,
+    )
+    heartbeat_thread.start()
 
     exit_code = 0
     try:
@@ -221,7 +255,6 @@ def run() -> int:
                 write_heartbeat(config, spool, source_status, runtime)
                 continue
 
-            write_heartbeat(config, spool, source_status, runtime)
             if source_status.get("fatal_error"):
                 raise RuntimeError(
                     f"capture source failed: {source_status['fatal_error']}"
@@ -247,6 +280,7 @@ def run() -> int:
         if source_thread.is_alive():
             LOGGER.error("capture source did not stop within 10 seconds")
             exit_code = 1
+        heartbeat_thread.join(timeout=10)
         if plugin is not None:
             with contextlib.suppress(Exception):
                 plugin.__exit__(None, None, None)
