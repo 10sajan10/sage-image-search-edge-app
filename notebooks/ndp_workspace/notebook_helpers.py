@@ -76,11 +76,31 @@ class CaptionRecord:
 
 @dataclass
 class PortableIndex:
+    """Image vectors, caption text, and an optional dense caption leg.
+
+    edge_v1 has no caption vectors: it and every bundled reference run
+    (baseline/v10/v11/v12) use `clip_hybrid_query` against a single `clip`
+    image vector, with the caption text searched lexically by BM25. So
+    `caption_vectors` is None for edge_v1 and the caption leg is simply not
+    used.
+
+    edge_v2 will populate `caption_vectors`, so the leg stays first-class
+    throughout: build it with `build_index(embed_captions=True)`, then pass a
+    non-zero `caption_weight`. Requesting a caption weight against an index
+    that has no caption vectors is an error rather than a silent reweighting --
+    silently dropping the leg would make two runs look comparable when their
+    fusion differed.
+    """
+
     model_id: str
     records: list[CaptionRecord]
     image_vectors: np.ndarray
     caption_vectors: np.ndarray | None = None
     source: str = "unknown"
+
+    @property
+    def has_caption_vectors(self) -> bool:
+        return self.caption_vectors is not None
 
     def validate(self) -> None:
         count = len(self.records)
@@ -246,16 +266,17 @@ def _metadata_bytes(index: PortableIndex) -> np.ndarray:
 def save_portable_index(index: PortableIndex, path: Path) -> None:
     index.validate()
     path.parent.mkdir(parents=True, exist_ok=True)
-    caption_vectors = (
-        index.caption_vectors.astype(np.float32, copy=False)
-        if index.caption_vectors is not None
-        else np.empty((0, 0), dtype=np.float32)
-    )
     np.savez(
         path,
         metadata=_metadata_bytes(index),
         image_vectors=index.image_vectors.astype(np.float32, copy=False),
-        caption_vectors=caption_vectors,
+        # Empty for an image-only index such as edge_v1; populated by
+        # build_index(embed_captions=True).
+        caption_vectors=(
+            index.caption_vectors.astype(np.float32, copy=False)
+            if index.caption_vectors is not None
+            else np.empty((0, 0), dtype=np.float32)
+        ),
     )
     print(f"Saved {len(index.records):,} records to {path} ({path.stat().st_size / 2**20:.1f} MiB)")
 
@@ -267,7 +288,11 @@ def load_portable_index(path: Path) -> PortableIndex:
         metadata = json.loads(archive["metadata"].tobytes().decode("utf-8"))
         if metadata.get("format_version") != PORTABLE_INDEX_VERSION:
             raise ValueError(f"Unsupported index format: {metadata.get('format_version')}")
-        captions = archive["caption_vectors"]
+        captions = (
+            archive["caption_vectors"]
+            if "caption_vectors" in archive.files
+            else np.empty((0, 0), dtype=np.float32)
+        )
         index = PortableIndex(
             model_id=str(metadata["model_id"]),
             source=str(metadata.get("source", "unknown")),
@@ -305,6 +330,7 @@ def save_sqlite_vector_database(index: PortableIndex, path: Path) -> None:
                 caption TEXT NOT NULL,
                 image_path TEXT NOT NULL,
                 image_vector BLOB NOT NULL,
+                -- NULL for an image-only index such as edge_v1.
                 caption_vector BLOB
             );
             CREATE UNIQUE INDEX images_dataset_id ON images(dataset, image_id);
@@ -369,7 +395,7 @@ def load_sqlite_vector_database(path: Path) -> PortableIndex:
     finally:
         connection.close()
     image_dimension = int(metadata["image_dimension"])
-    caption_dimension = int(metadata["caption_dimension"])
+    caption_dimension = int(metadata.get("caption_dimension", 0))
     records = [CaptionRecord(*row[:4]) for row in rows]
     image_vectors = np.stack([
         np.frombuffer(row[4], dtype=np.float32, count=image_dimension).copy()
@@ -482,7 +508,7 @@ class TextImageEncoder:
         return np.concatenate(chunks, axis=0).astype(np.float32, copy=False)
 
 
-def build_mobileclip_index(
+def build_index(
     records: list[CaptionRecord],
     image_root: Path,
     output: Path,
@@ -490,22 +516,31 @@ def build_mobileclip_index(
     device: str,
     batch_size: int,
     token: str | None = None,
+    embed_captions: bool = False,
 ) -> PortableIndex:
+    """Embed benchmark images, and optionally the captions too.
+
+    `embed_captions=False` reproduces edge_v1: captions stay text and are
+    searched by BM25. Set it True for an edge_v2-style index that also wants a
+    dense caption leg; the caption vectors then come from the same encoder, so
+    they share the image vectors' dimensionality and query encoder.
+    """
     encoder = TextImageEncoder(model_id, device=device, token=token)
     image_vectors = encoder.encode_images(
         [image_root / record.image_path for record in records],
         batch_size=batch_size,
     )
-    caption_vectors = encoder.encode_texts(
-        [record.caption for record in records],
-        batch_size=batch_size,
-    )
+    caption_vectors = None
+    if embed_captions:
+        caption_vectors = encoder.encode_texts(
+            [record.caption for record in records], batch_size=batch_size
+        )
     index = PortableIndex(
         model_id=model_id,
         records=records,
         image_vectors=image_vectors,
         caption_vectors=caption_vectors,
-        source="mobileclip2",
+        source=model_id.rsplit("/", 1)[-1],
     )
     save_portable_index(index, output)
     return index
@@ -523,20 +558,60 @@ def _relative_topk_fusion(
     score_legs: Sequence[np.ndarray],
     weights: np.ndarray,
     top_k: int,
-) -> tuple[np.ndarray, np.ndarray]:
-    """Apply relative-score fusion over each retrieval leg's top-K candidates."""
-    fused = np.zeros(len(score_legs[0]), dtype=np.float64)
+) -> tuple[np.ndarray, np.ndarray, list[np.ndarray]]:
+    """Apply relative-score fusion over each retrieval leg's top-K candidates.
+
+    Also returns each leg's weighted contribution. Contributions are
+    normalized over the candidate subset, exactly like the fused total, so a
+    reported per-leg breakdown always sums to the reported score. Reporting a
+    corpus-wide normalization beside a candidate-normalized total would not
+    add up.
+    """
+    length = len(score_legs[0])
+    count = min(top_k, length)
+    if count < 1:
+        raise ValueError("Cannot fuse an empty index")
+    fused = np.zeros(length, dtype=np.float64)
+    contributions = [np.zeros(length, dtype=np.float64) for _ in score_legs]
     candidate_sets: list[np.ndarray] = []
-    count = min(top_k, len(fused))
-    for scores, weight in zip(score_legs, weights):
+    for leg, (scores, weight) in enumerate(zip(score_legs, weights)):
         if weight <= 0:
             continue
         candidates = np.argpartition(scores, -count)[-count:]
         candidate_sets.append(candidates)
-        fused[candidates] += weight * _relative_score(scores[candidates])
+        contributions[leg][candidates] = weight * _relative_score(scores[candidates])
+        fused[candidates] += contributions[leg][candidates]
     union = np.unique(np.concatenate(candidate_sets))
     ordered = union[np.argsort(fused[union])[::-1]][:count]
-    return fused, ordered
+    return fused, ordered, contributions
+
+
+def resolve_weights(
+    index: PortableIndex,
+    image_weight: float,
+    caption_weight: float,
+    bm25_weight: float,
+) -> np.ndarray:
+    """Normalize the three leg weights, refusing an unsatisfiable caption leg.
+
+    A missing caption leg is an error rather than a silent reweighting: quietly
+    zeroing caption_weight would let an edge_v1 index and an edge_v2 index
+    report the same configured weights while fusing differently, which makes
+    their benchmark scores look comparable when they are not.
+    """
+    weights = np.asarray(
+        [image_weight, caption_weight, bm25_weight], dtype=np.float64
+    )
+    if np.any(weights < 0) or not weights.sum():
+        raise ValueError("Weights must be non-negative and not all zero")
+    if caption_weight > 0 and not index.has_caption_vectors:
+        raise ValueError(
+            f"caption_weight={caption_weight} was requested, but the "
+            f"{index.source!r} index has no caption vectors. edge_v1 searches "
+            "captions with BM25 only. For a dense caption leg, rebuild with "
+            "build_index(..., embed_captions=True)."
+        )
+    return weights / weights.sum()
 
 
 def search_index(
@@ -544,44 +619,49 @@ def search_index(
     encoder: TextImageEncoder,
     query: str,
     top_k: int = 25,
-    image_weight: float = 0.70,
-    caption_weight: float = 0.20,
-    bm25_weight: float = 0.10,
+    image_weight: float = 0.40,
+    caption_weight: float = 0.0,
+    bm25_weight: float = 0.60,
 ) -> list[dict[str, Any]]:
+    """Fuse the image-vector leg, the optional caption-vector leg, and BM25."""
     from rank_bm25 import BM25Okapi
 
     if encoder.model_id != index.model_id:
         raise ValueError(
             f"Index uses {index.model_id}, but query encoder is {encoder.model_id}"
         )
-    weights = np.array([image_weight, caption_weight, bm25_weight], dtype=np.float64)
-    if np.any(weights < 0) or not weights.sum():
-        raise ValueError("Search weights must be non-negative and not all zero")
-    if index.caption_vectors is None:
-        weights[1] = 0
-    weights /= weights.sum()
+    weights = resolve_weights(index, image_weight, caption_weight, bm25_weight)
 
     query_vector = encoder.encode_texts([query])[0]
-    image_scores = _relative_score(index.image_vectors @ query_vector)
-    caption_scores = (
-        _relative_score(index.caption_vectors @ query_vector)
-        if index.caption_vectors is not None
-        else np.zeros(len(index.records), dtype=np.float32)
+    image_similarity = index.image_vectors @ query_vector
+    caption_similarity = (
+        index.caption_vectors @ query_vector
+        if index.has_caption_vectors
+        else np.zeros(len(index.records), dtype=np.float64)
     )
     tokenize = lambda text: re.findall(r"[a-z0-9]+", text.lower())
     bm25 = BM25Okapi([tokenize(record.caption) for record in index.records])
-    bm25_scores = _relative_score(np.asarray(bm25.get_scores(tokenize(query))))
+    bm25_raw = np.asarray(bm25.get_scores(tokenize(query)), dtype=np.float64)
     count = min(top_k, len(index.records))
-    fused, ordered = _relative_topk_fusion(
-        [image_scores, caption_scores, bm25_scores], weights, count
+    fused, ordered, contributions = _relative_topk_fusion(
+        [
+            _relative_score(image_similarity),
+            _relative_score(caption_similarity),
+            _relative_score(bm25_raw),
+        ],
+        weights,
+        count,
     )
     return [
         {
             "rank": rank,
+            # score == image_score + caption_score + bm25_score, by construction.
             "score": float(fused[position]),
-            "image_score": float(image_scores[position]),
-            "caption_score": float(caption_scores[position]),
-            "bm25_score": float(bm25_scores[position]),
+            "image_score": float(contributions[0][position]),
+            "caption_score": float(contributions[1][position]),
+            "bm25_score": float(contributions[2][position]),
+            "image_similarity": float(image_similarity[position]),
+            "bm25_raw": float(bm25_raw[position]),
             **index.records[position].__dict__,
         }
         for rank, position in enumerate(ordered, 1)
@@ -630,32 +710,28 @@ def _benchmark_scores(
     records = [index.records[int(position)] for position in positions]
     image_vectors = index.image_vectors[positions]
     caption_vectors = (
-        index.caption_vectors[positions] if index.caption_vectors is not None else None
+        index.caption_vectors[positions] if index.has_caption_vectors else None
     )
     tokenize = lambda value: re.findall(r"[a-z0-9]+", value.lower())
     bm25 = BM25Okapi([tokenize(record.caption) for record in records])
     query_vectors = encoder.encode_texts([query.text for query in queries], batch_size=batch_size)
 
-    weights = np.asarray([image_weight, caption_weight, bm25_weight], dtype=np.float64)
-    if np.any(weights < 0) or not weights.sum():
-        raise ValueError("Benchmark weights must be non-negative and not all zero")
-    if caption_vectors is None:
-        weights[1] = 0
-    weights /= weights.sum()
+    weights = resolve_weights(index, image_weight, caption_weight, bm25_weight)
 
     rows: list[dict[str, Any]] = []
     count = min(top_k, len(records))
+    zeros = np.zeros(len(records), dtype=np.float64)
     for query, query_vector in zip(queries, query_vectors):
         image_scores = _relative_score(image_vectors @ query_vector)
         caption_scores = (
             _relative_score(caption_vectors @ query_vector)
             if caption_vectors is not None
-            else np.zeros(len(records), dtype=np.float32)
+            else zeros
         )
         bm25_scores = _relative_score(
             np.asarray(bm25.get_scores(tokenize(query.text)), dtype=np.float32)
         )
-        _fused, ordered = _relative_topk_fusion(
+        _fused, ordered, _contributions = _relative_topk_fusion(
             [image_scores, caption_scores, bm25_scores], weights, count
         )
         ranked_ids = [records[int(position)].image_id for position in ordered]
@@ -691,9 +767,9 @@ def evaluate_benchmarks(
     dataset_root: Path,
     output_root: Path,
     top_k: int = 25,
-    image_weight: float = 0.75,
+    image_weight: float = 0.40,
     caption_weight: float = 0.0,
-    bm25_weight: float = 0.25,
+    bm25_weight: float = 0.60,
     batch_size: int = 64,
     system_version: str | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -872,6 +948,9 @@ def show_results(results: Sequence[dict[str, Any]], image_root: Path, width: int
     from IPython.display import HTML, display
 
     cards = []
+    # Only name the caption-vector leg when it actually contributed, so an
+    # edge_v1 card does not imply a leg the index does not have.
+    show_caption_leg = any(row.get("caption_score", 0.0) for row in results)
     for row in results:
         image_path = image_root / row["image_path"]
         if image_path.is_file():
@@ -891,8 +970,12 @@ def show_results(results: Sequence[dict[str, Any]], image_root: Path, width: int
             <article style="border:1px solid #ddd;border-radius:8px;padding:10px">
               <strong>#{row['rank']} · {html.escape(row['dataset'])}</strong>
               <div style="font-size:12px">
-                score={row['score']:.4f} · image={row['image_score']:.4f} ·
-                caption={row['caption_score']:.4f} · BM25={row['bm25_score']:.4f}
+                score={row['score']:.4f} = image {row['image_score']:.4f}
+                {f"+ caption {row['caption_score']:.4f} " if show_caption_leg else ""}
+                + BM25 {row['bm25_score']:.4f}
+              </div>
+              <div style="font-size:11px;color:#666">
+                cosine={row['image_similarity']:.4f} · BM25 raw={row['bm25_raw']:.2f}
               </div>
               {image_html}
               <code style="font-size:11px">{html.escape(row['image_id'])}</code>

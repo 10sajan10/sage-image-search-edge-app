@@ -2,17 +2,48 @@
 
 This directory is a standalone Jupyter workflow for all five Sage image-search
 benchmarks. It optionally downloads the pinned Hugging Face datasets,
-materializes their images, builds or restores MobileCLIP2 vectors, populates an
+materializes their images, builds or restores image vectors, populates an
 embedded SQLite database, generates fresh edge_v1 benchmark results, and runs
 custom visual searches returning 25 results.
+
+## Retrieval legs
+
+Search fuses up to three legs. **edge_v1 uses two**: a CLIP **image vector**,
+and **BM25 over the Gemma captions**. Captions are not embedded as dense
+vectors, because `baseline`, `v10`, `v11`, and `v12` all ran
+`clip_hybrid_query` against a single `clip` image vector with the caption text
+searched lexically (`alpha=0.4` for v10–v12, `1.0` for baseline) — a dense
+caption leg would not be comparable to any of them. The default
+`IMAGE_WEIGHT=0.40` / `BM25_WEIGHT=0.60` mirrors that `alpha=0.4` split.
+
+The third leg stays first-class for **edge_v2**, which will have caption
+vectors:
+
+```python
+EMBED_CAPTIONS = True     # build_index embeds captions with the same encoder
+CAPTION_WEIGHT = 0.25     # then the dense caption leg contributes
+```
+
+`PortableIndex.caption_vectors`, the NPZ `caption_vectors` entry, and the
+SQLite `caption_vector` column all persist the leg; they are `None`/NULL for an
+image-only index. Passing `caption_weight > 0` to `search_index` or
+`evaluate_benchmarks` against an index with no caption vectors **raises**
+rather than silently reweighting — quietly zeroing it would let an edge_v1 and
+an edge_v2 run report identical configured weights while fusing differently,
+making their benchmark scores look comparable when they are not.
+
+Reported component scores are normalized the same way as the fused total, so
+`score == image_score + caption_score + bm25_score` exactly. Raw
+`image_similarity` (cosine) and `bm25_raw` are reported alongside.
+
+## Configuration choices
 
 The configuration cell asks the user to make two choices:
 
 - Download all benchmark data with the `HF_TOKEN` stored in `.env`, or reuse
   benchmark data already present under this workspace.
-- Build image and caption vectors for every Gemma-covered benchmark image with
-  MobileCLIP2, or restore those vectors from an NPZ backup supplied by the
-  user.
+- Build vectors for every Gemma-covered benchmark image, or restore vectors
+  from an NPZ backup.
 
 In build mode, captions come exclusively from the bundled original Gemma 3
 export:
@@ -23,15 +54,18 @@ assets/gemma3_4b_it_edge_v1_benchmark_captions.jsonl
 
 Each source row identifies `model` as `gemma-3-4b-it`. The notebook does not
 launch Gemma and does not replace these captions with benchmark summaries. It
-resolves the captions to downloaded image paths, embeds each covered image and
-caption with MobileCLIP2, then saves the result as
-`data/backups/mobileclip2_benchmarks.npz`. In backup mode, the user enters the
-path to an existing compatible NPZ file.
+resolves the captions to downloaded image paths, embeds each covered image
+(and, with `EMBED_CAPTIONS = True`, each caption) using `MOBILECLIP_MODEL_ID`,
+then saves the result as `data/backups/<model>_benchmarks.npz` — a separate
+file, so a build never overwrites the bundled backup. In backup mode the user
+enters the path to an existing compatible NPZ file; that default is the bundled
+edge_v1 `apple/DFN5B-CLIP-ViT-H-14-378` image index, which is gitignored, so on
+a fresh clone choose **build**.
 
 Both modes populate `data/vector_database/mobileclip2_benchmarks.sqlite3`.
 SQLite is the file-based database: it stores dataset, image ID, caption, image
-path, image vector, caption vector, and model metadata. It runs directly in
-Python and requires no container, service, or external database.
+path, image vector, an optional caption vector, and model metadata. It runs
+directly in Python and requires no container, service, or external database.
 
 The Gemma export covers 32,142 of the 32,177 benchmark images. The 35 missing
 CloudBench captions are original generation failures. They are reported as a
@@ -70,7 +104,7 @@ python -m venv .venv
 ```
 
 Set `HF_TOKEN` in `.env`. The notebook requires it whenever the user chooses to
-download benchmark data or build MobileCLIP2 vectors. Interactive choices and
+download benchmark data or build vectors. Interactive choices and
 internal paths are deliberately not stored in `.env`.
 
 Benchmark paths are not environment variables. The notebook creates its own
@@ -80,10 +114,12 @@ clone-relative directories automatically:
 ndp_workspace/data/benchmarking/datasets
 ndp_workspace/data/benchmarking/images
 ndp_workspace/data/gemma3_4b_it_edge_v1_benchmark_captions_resolved.jsonl
-ndp_workspace/data/backups/mobileclip2_benchmarks.npz
+ndp_workspace/data/edge_v1_benchmarks.npz          (bundled, backup mode)
+ndp_workspace/data/backups/<model>_benchmarks.npz  (written by build mode)
 ndp_workspace/data/vector_database/mobileclip2_benchmarks.sqlite3
 ndp_workspace/data/generated_benchmarks
 ```
 
 The final cell prompts for a custom text query and prints each result's fused
-score, component scores, caption, rendered image, image ID, and stored path.
+score, its weighted per-leg components (which sum to the score), the raw
+cosine and BM25 values, caption, rendered image, image ID, and stored path.
