@@ -67,9 +67,17 @@ SQLite is the file-based database: it stores dataset, image ID, caption, image
 path, image vector, an optional caption vector, and model metadata. It runs
 directly in Python and requires no container, service, or external database.
 
-The Gemma export covers 32,142 of the 32,177 benchmark images. The 35 missing
-CloudBench captions are original generation failures. They are reported as a
-coverage gap and are not silently replaced with non-Gemma text.
+The Gemma export covers all 32,177 benchmark images.
+
+The original edge_v1 run left 35 CloudBench images uncaptioned: every one failed
+with `RuntimeError('timed out')`, in three short bursts on a single node, so
+their images extracted fine but the population step skipped them and the
+collection settled at 32,142. They were backfilled with
+`ImageSearchatEdge/scripts/backfill_missing_captions.py`, which re-runs the
+original pipeline's own functions -- same `gemma-3-4b-it` endpoint, prompt,
+caption cleaner, DFN5B encoder, deterministic UUID, and object payload -- so the
+backfilled records are structurally identical to the rest. They were never
+replaced with non-Gemma text.
 
 Before the free-form search demo, the notebook generates a new edge_v1
 per-query run from the SQLite database and public Parquet relevance labels. It
