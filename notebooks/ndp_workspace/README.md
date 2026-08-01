@@ -42,6 +42,10 @@ are tracked with Git LFS. The tracked `edge_v1_export_manifest.json` and
 `edge_v2_export_manifest.json` identify them by model, shape, dataset counts,
 byte size, and SHA-256 checksum.
 
+For direct inspection without loading NumPy, the exact Edge v2 caption text
+and image paths are also tracked in
+`assets/ollama_gemma4_e2b_edge_v2_benchmark_captions.jsonl`.
+
 `PortableIndex.caption_vectors`, the NPZ `caption_vectors` entry, and SQLite's
 `caption_vector` column persist the dense caption leg. Requesting a positive
 caption weight against an index without that leg raises an error rather than
