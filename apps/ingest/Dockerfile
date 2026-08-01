@@ -13,16 +13,15 @@ WORKDIR /app
 
 COPY requirements.txt /app/requirements.txt
 
-# Torch and NumPy must stay the NVIDIA-compiled builds from the base image.
-# Generic PyPI torch has no Thor (sm_110) kernels, and a transitive NumPy 2.x
-# upgrade breaks torch's NumPy 1.x C ABI. transformers/timm/peft will happily
-# pull both in, so freeze all three before installing anything.
-RUN TORCH_VER="$(python3 -c 'import torch; print(torch.__version__)')" \
-    && TV_VER="$(python3 -c 'import torchvision; print(torchvision.__version__)')" \
-    && NP_VER="$(python3 -c 'import numpy; print(numpy.__version__)')" \
-    && printf 'torch==%s\ntorchvision==%s\nnumpy==%s\n' \
-        "$TORCH_VER" "$TV_VER" "$NP_VER" > /tmp/constraints.txt \
-    && pip3 install --no-cache-dir -c /tmp/constraints.txt -r /app/requirements.txt
+# Torch, torchvision, and NumPy must stay the NVIDIA-compiled builds from the
+# base image. Record their local NVIDIA versions before pip runs and assert the
+# exact values after installation. Using those local versions as PyPI
+# constraints does not work: pip cannot resolve NVIDIA's non-PyPI build as a
+# candidate for timm's torch dependency.
+RUN python3 -c "import json, numpy, torch, torchvision; \
+json.dump({'torch': torch.__version__, 'torchvision': torchvision.__version__, \
+'numpy': numpy.__version__}, open('/tmp/nvidia-base-versions.json', 'w'))" \
+    && pip3 install --no-cache-dir -r /app/requirements.txt
 
 # pywaggle's waggle.data.vision does `import cv2` at module scope but does not
 # depend on opencv, so the camera source needs a working cv2. The base image
@@ -32,8 +31,7 @@ RUN TORCH_VER="$(python3 -c 'import torch; print(torch.__version__)')" \
 # the dist-packages cv2* directories must be removed explicitly.
 RUN pip3 uninstall -y opencv-python opencv-python-headless 2>/dev/null; \
     rm -rf /usr/local/lib/python3.*/dist-packages/cv2* \
-    && pip3 install --no-cache-dir -c /tmp/constraints.txt \
-        "opencv-python-headless==5.0.0.93"
+    && pip3 install --no-cache-dir "opencv-python-headless==5.0.0.93"
 
 ENV HF_HUB_OFFLINE=1 \
     TRANSFORMERS_OFFLINE=1 \
@@ -69,9 +67,12 @@ RUN python3 -m compileall -q /app/image_search /app/main.py /app/healthcheck.py 
     # source lazily, so a broken cv2 or a downgraded torch would otherwise
     # only surface on the node, inside the capture thread, as a
     # CrashLoopBackOff. Import them here so the build fails instead.
-    && python3 -c "import cv2, numpy, torch, torchvision, waggle.data.vision; \
-print('cv2', cv2.__version__, '| numpy', numpy.__version__, \
-'| torch', torch.__version__)"
+    && python3 -c "import cv2, json, numpy, torch, torchvision, waggle.data.vision; \
+expected=json.load(open('/tmp/nvidia-base-versions.json')); \
+actual={'torch': torch.__version__, 'torchvision': torchvision.__version__, \
+'numpy': numpy.__version__}; assert actual == expected, \
+f'NVIDIA base packages changed: expected {expected}, got {actual}'; \
+print('cv2', cv2.__version__, '|', actual)"
 
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["python3", "/app/main.py"]

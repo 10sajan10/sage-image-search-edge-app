@@ -210,7 +210,6 @@ def run() -> int:
                             "dead_letter": dead,
                         },
                     )
-                    write_heartbeat(config, spool, source_status, runtime)
                     continue
 
                 spool.mark_ingested(record, asdict(result))
@@ -252,7 +251,6 @@ def run() -> int:
                     record.timestamp,
                     telemetry_meta,
                 )
-                write_heartbeat(config, spool, source_status, runtime)
                 continue
 
             if source_status.get("fatal_error"):
