@@ -19,6 +19,17 @@ This repository is the integration and deployment hub: it documents the full
 architecture, keeps the Kubernetes/Sage deployment resources together, and
 coordinates compatible versions of the two applications.
 
+## NDP/NRP workspace notebook
+
+[`notebooks/ndp_workspace/ndp_benchmark_search.ipynb`](notebooks/ndp_workspace/ndp_benchmark_search.ipynb)
+is a standalone Jupyter workflow for downloading all five pinned benchmark
+datasets, building or restoring MobileCLIP2 image and caption vectors,
+populating a local SQLite vector database, generating edge_v1 benchmark
+comparisons, and returning 25 visual search results. Its isolated requirements,
+environment template, bundled Gemma 3 caption export, bundled comparison
+results, and setup guide live in the same directory; no caption model or
+database container is required.
+
 ```text
 RTSP or Sage camera
   -> image-search-ingest

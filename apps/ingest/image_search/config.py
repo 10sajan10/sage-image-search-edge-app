@@ -204,7 +204,7 @@ class IngestConfig:
             capture_source=source,
             camera=camera,
             capture_interval_seconds=env_int(
-                "CAPTURE_INTERVAL_SECONDS", 300, minimum=1
+                "CAPTURE_INTERVAL_SECONDS", 180, minimum=1
             ),
             image_dir=Path(env("IMAGE_DIR", "/data/images")),
             image_glob=env("IMAGE_GLOB", "**/*.jpg"),
@@ -273,13 +273,17 @@ class SearchConfig:
         }
         if sum(weights.values()) <= 0:
             raise ValueError("At least one default search weight must be > 0")
+        default_top_k = env_int("DEFAULT_TOP_K", 25, minimum=1)
+        max_top_k = env_int("MAX_TOP_K", 200, minimum=1)
+        if default_top_k > max_top_k:
+            raise ValueError("DEFAULT_TOP_K must be <= MAX_TOP_K")
         return cls(
             common=CommonConfig.from_env(),
             host=env("SEARCH_HOST", "0.0.0.0"),
             port=env_int("SEARCH_PORT", 8099, minimum=1),
             default_weights=weights,
-            default_top_k=env_int("DEFAULT_TOP_K", 25, minimum=1),
-            max_top_k=env_int("MAX_TOP_K", 200, minimum=1),
+            default_top_k=default_top_k,
+            max_top_k=max_top_k,
             candidates_per_leg=env_int("CANDIDATES_PER_LEG", 100, minimum=1),
             max_concurrency=env_int("SEARCH_MAX_CONCURRENCY", 1, minimum=1),
             request_timeout_seconds=env_int(

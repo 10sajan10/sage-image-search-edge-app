@@ -1,0 +1,11 @@
+huggingface-hub>=0.34,<2
+ipykernel>=6,<8
+numpy>=1.26,<3
+open-clip-torch>=3.2,<4
+pandas>=2.2,<4
+pillow>=10,<13
+pyarrow>=18,<24
+python-dotenv>=1,<2
+rank-bm25>=0.2.2,<0.3
+torch>=2.3
+transformers>=4.53,<6

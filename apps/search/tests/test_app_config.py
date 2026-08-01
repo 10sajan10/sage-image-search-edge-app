@@ -1,4 +1,4 @@
-from image_search.config import IngestConfig, redacted_url
+from image_search.config import IngestConfig, SearchConfig, redacted_url
 
 
 def test_redacted_url_hides_camera_credentials() -> None:
@@ -36,3 +36,21 @@ def test_invalid_run_mode_is_rejected(monkeypatch) -> None:
         assert "RUN_MODE" in str(error)
     else:
         raise AssertionError("invalid RUN_MODE was accepted")
+
+
+def test_capture_interval_default_matches_documented_value(monkeypatch) -> None:
+    monkeypatch.setenv("CAPTURE_SOURCE", "directory")
+
+    assert IngestConfig.from_env().capture_interval_seconds == 180
+
+
+def test_default_top_k_cannot_exceed_maximum(monkeypatch) -> None:
+    monkeypatch.setenv("DEFAULT_TOP_K", "201")
+    monkeypatch.setenv("MAX_TOP_K", "200")
+
+    try:
+        SearchConfig.from_env()
+    except ValueError as error:
+        assert "DEFAULT_TOP_K" in str(error)
+    else:
+        raise AssertionError("DEFAULT_TOP_K greater than MAX_TOP_K was accepted")

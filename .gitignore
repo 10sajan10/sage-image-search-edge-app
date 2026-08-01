@@ -8,6 +8,10 @@ __pycache__/
 .env
 *.env.local
 
+# NRP workspace notebook downloads and portable vector indexes.
+notebooks/ndp_workspace/data/
+notebooks/ndp_workspace/.venv/
+
 data/
 frames/
 state/

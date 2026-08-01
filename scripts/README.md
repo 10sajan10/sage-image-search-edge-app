@@ -9,6 +9,10 @@
 - `check-dependencies.sh` checks Qdrant, Ollama, model files, and CUDA.
 - `e2e.sh` exercises ingestion, restart idempotence, authentication, and
   ranking against a temporary collection.
+- `check-app-sync.py` verifies that the runtime sources and tests under
+  `apps/{ingest,search}` match their sibling standalone repositories. It
+  intentionally ignores each repository's own README, `sage.yaml`, and Git
+  metadata.
 
 Run these scripts from any directory; they resolve the repository root
 internally. Deployment scripts never store secrets in this repository.
