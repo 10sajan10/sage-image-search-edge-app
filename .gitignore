@@ -8,7 +8,7 @@ __pycache__/
 .env
 *.env.local
 
-# NRP workspace notebook downloads and portable vector indexes.
+# NDP workspace runtime downloads and generated databases.
 notebooks/ndp_workspace/data/
 notebooks/ndp_workspace/.venv/
 
@@ -17,3 +17,10 @@ frames/
 state/
 spool/
 /captured-image.jpg
+
+# Keep the two portable NDP indexes in Git LFS while continuing to ignore
+# downloaded datasets, extracted images, model caches, and SQLite files.
+!notebooks/ndp_workspace/data/
+notebooks/ndp_workspace/data/*
+!notebooks/ndp_workspace/data/edge_v1_benchmarks.npz
+!notebooks/ndp_workspace/data/edge_v2_benchmarks.npz

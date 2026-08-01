@@ -283,6 +283,12 @@ def save_portable_index(index: PortableIndex, path: Path) -> None:
 def load_portable_index(path: Path) -> PortableIndex:
     if not path.is_file():
         raise FileNotFoundError(f"Portable vector index not found: {path}")
+    with path.open("rb") as source:
+        if source.read(40).startswith(b"version https://git-lfs.github.com"):
+            raise RuntimeError(
+                f"{path} is only a Git LFS pointer. Install Git LFS and run "
+                "`git lfs pull` from the repository root."
+            )
     with np.load(path, allow_pickle=False) as archive:
         metadata = json.loads(archive["metadata"].tobytes().decode("utf-8"))
         if metadata.get("format_version") != PORTABLE_INDEX_VERSION:

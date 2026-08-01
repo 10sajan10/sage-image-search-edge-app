@@ -1,0 +1,297 @@
+query_id,query,total_images,correctly_returned,incorrectly_returned,relevant_images,non_relevant_images,precision,recall,hit,diversity,rerank_score_NDCG,clip_score_NDCG,rerank_score_reciprocal_rank,clip_score_reciprocal_rank
+query_001,"Close-up of a packed lunch or bento box with vegetables, fruit, bread, and a dessert (cookie) in divided containers",25.0,1.0,24.0,9.0,5944.0,0.04,0.1111111111111111,1.0,0.4257133988204994,0.2350455494144854,0.2350455494144854,1.0,1.0
+query_002,Giraffes inside an indoor zoo enclosure with visitors viewing through glass,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.198467807245004,1.0,1.0,1.0,1.0
+query_003,Herd of elephants walking on a dirt path in a dry natural landscape,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2703011689745457,1.0,1.0,1.0,1.0
+query_004,baby or young child with a birthday cake and frosting (cake-smash) at an indoor party,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.43416468908317307,1.0,1.0,1.0,1.0
+query_005,bathroom interior with bathtub and shower,25.0,0.0,25.0,1.0,5952.0,0.0,0.0,0.0,0.2985878187770301,0.0,0.0,0.0,0.0
+query_006,"Motorcycle parked outdoors (e.g., in a parking lot or on the street)",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.41713145000892116,0.14434031438272124,0.14434031438272124,0.05555555555555555,0.05555555555555555
+query_007,"Elephants standing at the edge of a pond, river, or muddy water in a natural outdoor setting",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.27731188238729587,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_008,"residential kitchen interior with cabinets, stove, and microwave",25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.28555820077927174,0.10253313861822189,0.10253313861822189,0.07692307692307693,0.07692307692307693
+query_009,People posing together on a tree-lined park path,25.0,0.0,25.0,1.0,5952.0,0.0,0.0,0.0,0.5098923267945257,0.0,0.0,0.0,0.0
+query_010,portrait of an adult man wearing glasses,25.0,2.0,23.0,5.0,5948.0,0.08,0.4,1.0,0.4882554702465832,0.2826335043946801,0.2826335043946801,0.3333333333333333,0.3333333333333333
+query_011,giraffe standing outdoors,25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.2087232343048505,0.7700871371433883,0.7700871371433883,1.0,1.0
+query_012,Person riding an ATV herding sheep on a snowy rural road with a sheepdog,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.518800643156795,1.0,1.0,1.0,1.0
+query_013,historic clock tower with a dome against a clear blue sky,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4196214980506081,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_014,Child wearing sunglasses sitting outdoors under an umbrella,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.541008193067492,1.0,1.0,1.0,1.0
+query_015,Person on a bicycle or scooter on an urban street with storefronts and parked vehicles,25.0,2.0,23.0,4.0,5949.0,0.08,0.5,1.0,0.47357669190483165,0.23004758985183593,0.23004758985183593,0.14285714285714285,0.14285714285714285
+query_016,group of people with skateboards on an urban sidewalk/outside a storefront,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.479448913043684,1.0,1.0,1.0,1.0
+query_017,people flying kites in a park or open grassy field,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.3319364027456547,0.0,0.0,0.0,0.0
+query_018,person sitting on a park bench surrounded by pigeons in an urban park,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.49013067820605827,1.0,1.0,1.0,1.0
+query_019,"living room interior with sofa, armchair and coffee table",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.31610143177998695,0.27023815442731974,0.27023815442731974,0.08333333333333333,0.08333333333333333
+query_020,People skiing or playing on a snowy slope (group of skiers or children on snow),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.276476996833803,0.31546487678572877,0.31546487678572877,0.125,0.125
+query_021,"Residential bathroom interior with a toilet, shelving or cabinet, and towels (indoor home bathroom).",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.25089958104766874,0.21533827903669653,0.21533827903669653,0.041666666666666664,0.041666666666666664
+query_022,double-decker bus on a city street,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.28205355294060586,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_023,"Rural countryside landscape with grassy fields, fences or houses, and cloudy/overcast sky",25.0,1.0,24.0,5.0,5948.0,0.04,0.2,1.0,0.31331741332340035,0.3391602052736161,0.3391602052736161,1.0,1.0
+query_024,Cat lying on indoor furniture (chair or sofa) in a residential room,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.35415872560282013,0.3065735963827292,0.3065735963827292,0.3333333333333333,0.3333333333333333
+query_025,"City street or intersection with buses or other vehicles, traffic lights and buildings",25.0,1.0,24.0,6.0,5947.0,0.04,0.16666666666666666,1.0,0.4014856023060456,0.07565060337470338,0.07565060337470338,0.06666666666666667,0.06666666666666667
+query_026,"People working in a home kitchen, preparing food or washing dishes",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4415784617189509,0.3010299956639812,0.3010299956639812,0.1111111111111111,0.1111111111111111
+query_027,"Hotel room interior with a bed, sofa, desk and TV",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3489221475420131,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_028,"Street-level view of a small-town or city street with storefronts/buildings, parked cars or vehicles, pedestrians, and visible signage.",25.0,1.0,24.0,6.0,5947.0,0.04,0.16666666666666666,1.0,0.4694788534673092,0.08177471774917203,0.08177471774917203,0.08333333333333333,0.08333333333333333
+query_029,Indoor table setting with glasses and plates of snacks (wine or drinks with food),25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.44904221735662153,0.2960819109658652,0.2960819109658652,0.5,0.5
+query_030,"Indoor kitchen counter with dishes, stacked plates, utensils, and a person standing nearby",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.46230509350739757,0.6131471927654584,0.6131471927654584,1.0,1.0
+query_031,People seated at an indoor dining table with place settings,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.445857824947962,0.1395953738647505,0.1395953738647505,0.05,0.05
+query_032,Elephants walking along a road through a grassy rural landscape (outdoor),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.27994700814592344,1.0,1.0,1.0,1.0
+query_033,Group of zebras standing outdoors,25.0,0.0,25.0,1.0,5952.0,0.0,0.0,0.0,0.19930002079126163,0.0,0.0,0.0,0.0
+query_034,"child sitting on a made bed in a cozy, warmly lit bedroom with a bedside lamp",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.41578802708110285,1.0,1.0,1.0,1.0
+query_035,"Indoor desk workspace with laptops and a monitor (computer setup, microphone, mouse, desk lamp)",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.21033473816248494,1.0,1.0,1.0,1.0
+query_036,Giraffe in an outdoor zoo or park enclosure,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.1897914940914005,0.22424382421757544,0.22424382421757544,0.047619047619047616,0.047619047619047616
+query_037,Person wearing a conical hat sitting in a small wooden boat on a river or canal (rural outdoor scene),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5192741015977803,1.0,1.0,1.0,1.0
+query_038,stainless steel refrigerator in a kitchen,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.32402370254375035,1.0,1.0,1.0,1.0
+query_039,People walking on an urban street holding umbrellas in the rain,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.38336191034533806,0.43067655807339306,0.43067655807339306,0.25,0.25
+query_040,Two brown bears interacting outdoors in a natural setting,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.32479065581046385,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_041,people in a boat on a lake,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5105446041604675,1.0,1.0,1.0,1.0
+query_042,"Bathroom interior with toilet, sink, and vanity cabinet",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2579444275600212,0.31546487678572877,0.31546487678572877,0.125,0.125
+query_043,train on railway tracks,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.3173987873532491,0.10235170428306553,0.10235170428306553,0.043478260869565216,0.043478260869565216
+query_044,child on a sofa holding a smartphone indoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.46519178799268357,0.38685280723454163,0.38685280723454163,0.2,0.2
+query_045,Brown bear standing on rocky ground outdoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2871006851933724,0.3333333333333333,0.3333333333333333,0.14285714285714285,0.14285714285714285
+query_046,"living room interior with a television, sofa/couch and coffee table",25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.31957829982092856,0.1125388887954676,0.1125388887954676,0.058823529411764705,0.058823529411764705
+query_047,young man skateboarding in an outdoor urban plaza,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2399321839888373,0.3333333333333333,0.3333333333333333,0.14285714285714285,0.14285714285714285
+query_048,Pickup truck towing a travel trailer parked in a grassy field with a dog nearby,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4039355562716386,1.0,1.0,1.0,1.0
+query_049,person carrying a surfboard on a beach,25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.3164209663424884,0.40366349643734134,0.40366349643734134,0.25,0.25
+query_050,Close-up of a bear drinking or licking water at the edge of a rocky pool,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.31305102622147696,1.0,1.0,1.0,1.0
+query_051,person in front of a mirror holding a hair dryer indoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4524842972923714,1.0,1.0,1.0,1.0
+query_052,person standing with a bicycle outdoors,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.49419095250368184,0.2960819109658652,0.2960819109658652,0.5,0.5
+query_053,plate with fruit and vegetables,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.42511359466005905,0.2960819109658652,0.2960819109658652,0.5,0.5
+query_054,"Person using a laptop indoors (e.g., sitting or lying on a bed, couch, or at a table)",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.3607035103566254,0.3065735963827292,0.3065735963827292,0.3333333333333333,0.3333333333333333
+query_055,Storefront building with an awning and benches on a snowy urban street,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5209819974976893,1.0,1.0,1.0,1.0
+query_056,Train or freight boxcar on railroad tracks in a rural outdoor setting,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.3382665839519825,0.2640681225725909,0.2640681225725909,0.25,0.25
+query_057,Indoor close-up of a cat drinking water from a sink or faucet,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3388512088247849,0.43067655807339306,0.43067655807339306,0.25,0.25
+query_058,steam locomotive or vintage train on outdoor railway tracks in a rural landscape,25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.3101841248952827,0.448643819352159,0.448643819352159,0.25,0.25
+query_059,Trains at railway stations or on platforms,25.0,0.0,25.0,5.0,5948.0,0.0,0.0,0.0,0.34786809602962365,0.0,0.0,0.0,0.0
+query_060,"Outdoor table with cakes or desserts and plates, with a person serving food",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.47962688883987115,1.0,1.0,1.0,1.0
+query_061,"People in a busy outdoor urban street or market scene (daytime), e.g. shoppers or vendors",25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.4866099240021754,0.1480409554829326,0.1480409554829326,0.125,0.125
+query_062,person flying a kite on a grassy waterfront or park (outdoor kite flying),25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.31167666130874594,0.20438239758848611,0.20438239758848611,0.14285714285714285,0.14285714285714285
+query_063,dogs on a beach at sunset,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.521489397974658,1.0,1.0,1.0,1.0
+query_064,person giving a presentation onstage in front of a large projected screen,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5483970043575825,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_065,train platform or vintage train car with luggage/suitcases on a luggage cart,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4279095214586145,1.0,1.0,1.0,1.0
+query_066,Outdoor baseball game on a grassy field with players and spectators,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.26942171564107764,0.43067655807339306,0.43067655807339306,0.25,0.25
+query_068,"Indoor display of pots, bowls, or containers on a shelf, bench, or table",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.5424928014900645,0.38685280723454163,0.38685280723454163,0.5,0.5
+query_069,Dog jumping to catch a flying disc (frisbee) in a grassy outdoor park,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3533864411484734,0.3010299956639812,0.3010299956639812,0.1111111111111111,0.1111111111111111
+query_070,motorcycle or scooter parked outdoors,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.41203110538169785,0.18457569677956817,0.18457569677956817,0.1111111111111111,0.1111111111111111
+query_071,Line of red fire trucks parked along a road,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5036302599616465,1.0,1.0,1.0,1.0
+query_072,Train parked near a lake with mountains in the background,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4543307139875892,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_073,"Pickup truck or small truck loaded with produce parked at a rural roadside market or stand, with people nearby",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.47834049705478787,1.0,1.0,1.0,1.0
+query_074,bird of prey (hawk) perched on a man-made structure outdoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5195381813767979,1.0,1.0,1.0,1.0
+query_075,outdoor ribbon-cutting ceremony on a street with people cutting a ribbon,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.538153413982112,1.0,1.0,1.0,1.0
+query_076,person on a beach with a surfboard / surfer on ocean waves,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.25269651141795924,0.15000679310833784,0.15000679310833784,0.0625,0.0625
+query_077,train at a station platform with passengers waiting,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3418894223086363,0.26264953503719357,0.26264953503719357,0.07692307692307693,0.07692307692307693
+query_078,small tourist road train stopped on a city street with passengers and trees,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.44628575965857464,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_079,people performing stunts on a motorcycle,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.43076570597968455,0.38685280723454163,0.38685280723454163,0.2,0.2
+query_080,Person in a baseball uniform holding a baseball and glove on an outdoor sports field,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.29280223276414685,1.0,1.0,1.0,1.0
+query_081,train on tracks in an outdoor landscape,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.3321542238683939,0.1125388887954676,0.1125388887954676,0.058823529411764705,0.058823529411764705
+query_082,elephant (mechanical or real) on a city street with people or performers (parade or public display),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4753938501147631,1.0,1.0,1.0,1.0
+query_083,people windsurfing on the ocean,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.32343099477842263,0.38685280723454163,0.38685280723454163,0.2,0.2
+query_084,"horse standing in a stable or stall, close-up (halters or lead ropes visible)",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.42619371335998013,1.0,1.0,1.0,1.0
+query_085,slice of frosted cake on a plate with a fork,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.44110658197059405,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_086,Commercial storefront or strip-mall building with a parking area and parked vehicles (truck/van),25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.43264287925065814,0.23463936301137822,0.23463936301137822,0.3333333333333333,0.3333333333333333
+query_087,Skateboarder performing a trick on a concrete ledge in an urban outdoor setting,25.0,0.0,25.0,1.0,5952.0,0.0,0.0,0.0,0.24281364679326245,0.0,0.0,0.0,0.0
+query_088,daytime outdoor photos of trains on tracks,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.33229187305693453,0.13373003436102654,0.13373003436102654,0.043478260869565216,0.043478260869565216
+query_089,People sitting and dining at an indoor table by a window overlooking a city or waterfront,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.45505911941474086,1.0,1.0,1.0,1.0
+query_090,"Interior bedroom with two beds, bedside table and lamp",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3502700424463876,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_091,"Urban street scene or intersection with street signs, traffic signs, and buildings",25.0,1.0,24.0,5.0,5948.0,0.04,0.2,1.0,0.40281047613076837,0.16958010263680806,0.16958010263680806,0.3333333333333333,0.3333333333333333
+query_092,airplane on display inside an aviation museum hangar,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.44062894776074946,0.38685280723454163,0.38685280723454163,0.2,0.2
+query_093,pony or small horse standing behind a metal fence in a rural outdoor setting,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.46741898442438423,1.0,1.0,1.0,1.0
+query_094,Interior view from inside a car showing the steering wheel and a dog (or dog paw).,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5104545912217506,1.0,1.0,1.0,1.0
+query_095,baby or toddler sitting in a high chair or at a kitchen/dining table eating,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.4067162380029621,0.2640681225725909,0.2640681225725909,0.25,0.25
+query_096,Close-up photo of a sandwich on a plate with a pickle spear,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.33648818730584384,0.22424382421757544,0.22424382421757544,0.047619047619047616,0.047619047619047616
+query_097,Zebra with foal standing together in a grassy outdoor natural setting,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.1924875079389231,1.0,1.0,1.0,1.0
+query_098,"Nighttime city street intersection with buildings, streetlights, traffic lights, and cars",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4261757292286982,0.2890648263178879,0.2890648263178879,0.1,0.1
+query_099,Birds standing in shallow water near a shoreline or park bench,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5290992645856853,1.0,1.0,1.0,1.0
+query_100,zebra standing or walking outdoors on sandy or dirt ground near rocks or fallen logs (side view),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2016388206178572,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_101,People sitting on a bench in an urban park during the daytime,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4982205801811599,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_102,"stone clock tower or church steeple against a cloudy sky, possibly with a bird nearby",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.41892943749415457,1.0,1.0,1.0,1.0
+query_103,steam train or locomotive on railway tracks near houses or a residential area,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3437523974787302,1.0,1.0,1.0,1.0
+query_104,"indoor bathroom with toilet and vanity or sink, countertop and bathroom fixtures",25.0,1.0,24.0,5.0,5948.0,0.04,0.2,1.0,0.24844960301308427,0.10699313236726378,0.10699313236726378,0.125,0.125
+query_105,"Small bathroom interior with a toilet and visible plumbing fixtures (sink, water heater, pipes, or water tank)",25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.2568325264792005,0.20210734650054757,0.20210734650054757,0.25,0.25
+query_106,ornate carved wooden wall clock with animal (deer) motif and leaf decorations,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.438840344433691,1.0,1.0,1.0,1.0
+query_107,"Indoor photos of a cat or dog resting on a bed, blanket, or sofa",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.31711388001258034,0.18457569677956817,0.18457569677956817,0.1111111111111111,0.1111111111111111
+query_108,skier jumping or airborne on a snowy mountain slope,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.30461570377438374,1.0,1.0,1.0,1.0
+query_109,"Close-up of food in a bowl, plate, or container showing fruit or toppings (e.g., banana slices, powders, spreads).",25.0,1.0,24.0,7.0,5946.0,0.04,0.14285714285714285,1.0,0.43005310183911827,0.27487633291429087,0.27487633291429087,1.0,1.0
+query_110,close-up of food on a plate or bowl,25.0,1.0,24.0,5.0,5948.0,0.04,0.2,1.0,0.4070715136151908,0.09165402792833294,0.09165402792833294,0.08333333333333333,0.08333333333333333
+query_111,skateboarder performing a trick in an urban setting,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.243778936565881,0.0,0.0,0.0,0.0
+query_112,"Boat moored along a canal or river beside a path, possibly with bicycles on the boat or nearby",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4955489519494144,1.0,1.0,1.0,1.0
+query_113,child playing indoors in a colorful play tent or indoor play area,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.47436617222556565,0.6131471927654584,0.6131471927654584,1.0,1.0
+query_114,person holding a surfboard at the beach (standing in shallow ocean water),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.30337369857958085,0.43067655807339306,0.43067655807339306,0.25,0.25
+query_115,child on a skateboard outdoors,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.30467205944621734,0.2640681225725909,0.2640681225725909,0.25,0.25
+query_116,apples in a bowl,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3662005135935964,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_117,Passenger train on railway tracks passing through a grassy rural landscape,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.2923895244175343,0.21840743681816419,0.21840743681816419,0.16666666666666666,0.16666666666666666
+query_118,"Indoor shelf or display with toys, figurines and books",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.4918819467425889,0.2640681225725909,0.2640681225725909,0.25,0.25
+query_119,Skiers on a snowy slope with a chairlift,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2870295817038202,0.27023815442731974,0.27023815442731974,0.08333333333333333,0.08333333333333333
+query_120,"Home office desk or computer workstation with monitor(s), a laptop, keyboard and a microphone",25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.20407065726931728,0.32417107064431866,0.32417107064431866,0.1111111111111111,0.1111111111111111
+query_121,Top-down (overhead) photo of a hot dog in a bun on a plate indoors on a table,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.30312764649809254,1.0,1.0,1.0,1.0
+query_122,baseball player on a baseball field with stadium spectators,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.24999240406378043,0.16569576576522954,0.16569576576522954,0.08333333333333333,0.08333333333333333
+query_123,person eating cake outdoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.497460027147823,1.0,1.0,1.0,1.0
+query_124,"residential bathroom interior with bathtub or shower, toilet, and sink/vanity",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.2574216506349567,0.3065735963827292,0.3065735963827292,0.3333333333333333,0.3333333333333333
+query_125,People skateboarding outdoors,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.27802804202266407,0.19342640361727081,0.19342640361727081,0.125,0.125
+query_126,"Dim indoor/nighttime room interior with a person visible in a window reflection or silhouetted by the glass, showing furniture and lamps",25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.48073690431534466,0.3903800499921017,0.3903800499921017,1.0,1.0
+query_127,People walking with umbrellas on a rainy city street,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.38336191034533806,0.2890648263178879,0.2890648263178879,0.1,0.1
+query_128,view from a small boat toward a lighthouse on coastal white cliffs,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5065867734554342,1.0,1.0,1.0,1.0
+query_129,person on a skateboard outdoors,25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.27959355769966554,0.0,0.0,0.0,0.0
+query_130,"person at an indoor dining table with food and drinks (plates, glasses)",25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.4716159899529392,0.19519002499605084,0.19519002499605084,0.3333333333333333,0.3333333333333333
+query_131,Elephants on a riverbank or shoreline (group of elephants near water),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2681243235412686,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_132,train traveling along tracks beside a body of water at night,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3763760789431292,1.0,1.0,1.0,1.0
+query_134,Red stop/traffic signal light mounted on a pole at the entrance of a parking garage,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.33981313795880885,1.0,1.0,1.0,1.0
+query_135,dog lying on a couch or sofa indoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3898441046514416,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_136,dog in a grassy park or field,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.4189953500412864,0.20438239758848611,0.20438239758848611,0.14285714285714285,0.14285714285714285
+query_137,mounted police officer (police on horseback) on a city street near vehicles,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4736102790933625,1.0,1.0,1.0,1.0
+query_138,Close-up portrait of a cat,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3498081236639905,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_139,Person on stage holding a skateboard during an indoor presentation,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3315806132334206,1.0,1.0,1.0,1.0
+query_140,People skiing on a snowy slope doing jumps (action shots/terrain park),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.29941634214384505,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_141,"Small residential bathroom interior with a vessel sink, toilet, and shower curtain",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.24853389404659232,1.0,1.0,1.0,1.0
+query_142,Zebra behind a fence or in an outdoor enclosure (zoo/safari),25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.20199799524117168,1.0,1.0,1.0,1.0
+query_143,donuts or pastries in a takeaway box,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3598912800337689,0.3333333333333333,0.3333333333333333,0.14285714285714285,0.14285714285714285
+query_144,"Table or café setting with plates of food, pastries or sandwiches and drinks (afternoon tea / table with tiered stand or plates and cups)",25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.4557690060224163,0.2960819109658652,0.2960819109658652,0.5,0.5
+query_145,Person with a surfboard in the ocean or riding a wave,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.18266982622667138,0.0,0.0,0.0,0.0
+query_146,person carrying or riding a surfboard at the beach,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.27870037655258695,0.12681701683239352,0.12681701683239352,0.08333333333333333,0.08333333333333333
+query_147,"Close-up photos of food, ingredients, or prepared dishes",25.0,2.0,23.0,7.0,5946.0,0.08,0.2857142857142857,1.0,0.45991925902877684,0.4123144993714363,0.4123144993714363,1.0,1.0
+query_148,"table with plates and bowls of food and fruit (e.g., bananas)",25.0,1.0,24.0,7.0,5946.0,0.04,0.14285714285714285,1.0,0.4164520493428554,0.27487633291429087,0.27487633291429087,1.0,1.0
+query_149,Interior bar or cafe counter with bottles and glassware on display,25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.48650098850879986,0.8065735963827293,0.8065735963827293,1.0,1.0
+query_150,people at an indoor cafe or dining table with pastries or other food,25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.4677169362600072,0.0,0.0,0.0,0.0
+query_151,small brown dog lying on a bed indoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.39447827617203823,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_152,oranges in a bowl or basket,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.34784608054891974,0.2640681225725909,0.2640681225725909,0.25,0.25
+query_153,"baseball players in action on a grass field (sliding, tagging, batting, or throwing)",25.0,0.0,25.0,4.0,5949.0,0.0,0.0,0.0,0.2617845459146254,0.0,0.0,0.0,0.0
+query_154,"People seated around an indoor dining table with plates, bowls, and food",25.0,2.0,23.0,4.0,5949.0,0.08,0.5,1.0,0.4679356974662181,0.24794994057900777,0.24794994057900777,0.16666666666666666,0.16666666666666666
+query_155,"office or home desk workspace with computer monitors, laptops, keyboard and mouse",25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.20794195140764782,0.3903800499921017,0.3903800499921017,1.0,1.0
+query_156,People playing video games with motion controllers in a living room,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3546778289973702,0.3333333333333333,0.3333333333333333,0.14285714285714285,0.14285714285714285
+query_157,bicycle on a city street or sidewalk,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.4618791430479593,0.6131471927654584,0.6131471927654584,1.0,1.0
+query_158,"Urban building exteriors and street scenes with painted murals, advertisements, or visible large signage",25.0,0.0,25.0,6.0,5947.0,0.0,0.0,0.0,0.4686606262954901,0.0,0.0,0.0,0.0
+query_159,people skiing on a snowy mountain slope,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.29074974838511936,0.0,0.0,0.0,0.0
+query_160,Outdoor train station platform with a train and people waiting,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.34188942230863617,0.2890648263178879,0.2890648263178879,0.1,0.1
+query_161,"Person sitting at a table indoors holding or smelling from a stemmed drinking glass (e.g., wine glass)",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4866531045332426,1.0,1.0,1.0,1.0
+query_162,"Close-up indoor photo of a plated cooked meal on a table (e.g., vegetables, potatoes or similar food)",25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.41414902060310776,0.24630238874073,0.24630238874073,0.5,0.5
+query_163,nighttime urban street with an illuminated clock tower/building and moving car light trails,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4421240941528042,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_164,Emergency vehicles (police or fire) parked outdoors with uniformed personnel nearby,25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.5370464171220461,0.4370182418909037,0.4370182418909037,0.3333333333333333,0.3333333333333333
+query_165,"People riding horses outdoors in an urban setting (e.g., mounted police or mounted patrol near a stadium or city street)",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.47105629688443806,1.0,1.0,1.0,1.0
+query_166,"Urban residential street with people walking, parked cars and row houses",25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.4783940133133777,0.46927872602275644,0.46927872602275644,1.0,1.0
+query_167,Sunny urban beach with people and colorful kites near beachfront buildings,25.0,2.0,23.0,3.0,5950.0,0.08,0.6666666666666666,1.0,0.3483165388323778,0.4632423659320675,0.4632423659320675,0.5,0.5
+query_168,person or hand holding a packaged pair of scissors in a retail store aisle,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.49952959955975995,1.0,1.0,1.0,1.0
+query_169,"Food on a table (plates, bowls, fruit bowls, or dishes)",25.0,0.0,25.0,8.0,5945.0,0.0,0.0,0.0,0.4611564847282913,0.0,0.0,0.0,0.0
+query_171,Airplane in an outdoor landscape (in flight or on the ground),25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.40152927402598093,0.2837368274693644,0.2837368274693644,0.0625,0.0625
+query_172,Close-up photos of prepared meals or plates featuring broccoli and other vegetables,25.0,3.0,22.0,7.0,5946.0,0.12,0.42857142857142855,1.0,0.3601626063259882,0.20517474846577494,0.20517474846577494,0.09090909090909091,0.09090909090909091
+query_173,people sitting at an indoor dining table with food and drinks,25.0,3.0,22.0,3.0,5950.0,0.12,1.0,1.0,0.4533546255867875,0.4807637314029234,0.4807637314029234,0.3333333333333333,0.3333333333333333
+query_174,Person wearing a helmet and harness holding kite lines on a grassy field (outdoor kiting/recreational activity),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.34496730017540644,1.0,1.0,1.0,1.0
+query_175,bathroom interior with a wall-mounted mirrored cabinet (medicine cabinet) and overhead lights,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.2939363921864975,0.46927872602275644,0.46927872602275644,1.0,1.0
+query_176,skateboarder performing tricks in a skatepark (urban outdoor skate bowl or ramp),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2252319227248909,0.23137821315975915,0.23137821315975915,0.05263157894736842,0.05263157894736842
+query_177,people holding umbrellas on a city street,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.39787092564501614,0.20438239758848611,0.20438239758848611,0.14285714285714285,0.14285714285714285
+query_178,cat and dog together on a bed indoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3304056980527815,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_179,people cutting a cake,25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.4958354393606358,0.7486924110517823,0.7486924110517823,1.0,1.0
+query_180,"Indoor home kitchen with cabinets, countertop, sink and potted plants",25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.29006397206011647,0.08754031530847717,0.08754031530847717,0.047619047619047616,0.047619047619047616
+query_181,"Outdoor street or roadside scenes showing roads with utility poles and traffic signs (e.g., stop signs) in suburban or urban settings",25.0,1.0,24.0,9.0,5944.0,0.04,0.1111111111111111,1.0,0.38043558887398077,0.07075576072108063,0.07075576072108063,0.1111111111111111,0.1111111111111111
+query_182,historic building facade with a large ornate decorative clock,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.41090409937954553,0.6131471927654584,0.6131471927654584,1.0,1.0
+query_183,"Outdoor cooking setup with a portable gas stove, frying pan, propane tank, and food on a table",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4840816375810427,1.0,1.0,1.0,1.0
+query_184,"Outdoor daytime photos of parked or stationary large vehicles (trucks, semi-trailers, buses, trains) in parking lots, yards, or urban/industrial streets with other cars nearby",25.0,1.0,24.0,5.0,5948.0,0.04,0.2,1.0,0.5322106221238516,0.11305340175787204,0.11305340175787204,0.14285714285714285,0.14285714285714285
+query_185,"Horses on streets or in urban/outdoor settings, including horse-drawn carriages",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.4595250485126534,0.6131471927654584,0.6131471927654584,1.0,1.0
+query_186,person eating at an indoor dining table,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.47708474568231796,0.3010299956639812,0.3010299956639812,0.1111111111111111,0.1111111111111111
+query_187,polar bear in an outdoor animal enclosure,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2891005449410371,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_188,"indoor cluttered desk or workspace with a computer (monitor or laptop), keyboard/mouse and miscellaneous items like mugs, papers or fruit",25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.2335316939576988,0.0,0.0,0.0,0.0
+query_189,People with animals on a beach or shoreline,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.45269218330658156,0.18457569677956817,0.18457569677956817,0.1111111111111111,0.1111111111111111
+query_190,cat in a bathroom,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.35731122172022345,1.0,1.0,1.0,1.0
+query_191,Person holding or swinging a baseball bat on an outdoor baseball/grass field,25.0,2.0,23.0,3.0,5950.0,0.08,0.6666666666666666,1.0,0.2705633745420437,0.3501483019834802,0.3501483019834802,0.25,0.25
+query_192,Two giraffes standing outdoors in a park or enclosure,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.1872125918376475,1.0,1.0,1.0,1.0
+query_193,Indoor living room or lounge interior with a sofa and a small pet (dog or cat) sitting on the furniture,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.39539033113438715,0.6131471927654584,0.6131471927654584,1.0,1.0
+query_194,man holding a smartphone taking a selfie or mirror selfie indoors (living room/indoor interior),25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.4676045961361729,0.3065735963827292,0.3065735963827292,0.3333333333333333,0.3333333333333333
+query_195,Top-down / overhead photo of a round frosted cake or dessert on a plate,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.40800670750641,0.6131471927654584,0.6131471927654584,1.0,1.0
+query_196,outdoor sky with clouds and a visible horizon,25.0,1.0,24.0,25.0,5928.0,0.04,0.04,1.0,0.374865353877083,0.026481122388885493,0.026481122388885493,0.041666666666666664,0.041666666666666664
+query_197,commuter train on elevated tracks or an overpass above a city street,25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.347959674143839,0.3753473811960941,0.3753473811960941,0.16666666666666666,0.16666666666666666
+query_198,"Airplane parked on the ground at an airfield (small or large aircraft on a runway, ramp, or grassy field)",25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.3837376221824923,0.296140411273404,0.296140411273404,0.08333333333333333,0.08333333333333333
+query_199,Boats docked at a lake or marina with a tree-lined shoreline and cloudy sky,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.5194412927827867,0.23463936301137822,0.23463936301137822,0.3333333333333333,0.3333333333333333
+query_200,people paddling a long narrow boat on calm water near a palm-lined shore,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.493672691899283,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_201,"Close-up photos of plated food or vegetable dishes (pasta, sandwiches, vegetables on a plate)",25.0,2.0,23.0,6.0,5947.0,0.08,0.3333333333333333,1.0,0.4186097180022892,0.19195987438972922,0.19195987438972922,0.14285714285714285,0.14285714285714285
+query_202,person riding a horse in a snowy mountain landscape,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5274041481028132,1.0,1.0,1.0,1.0
+query_203,Light blue vintage pickup truck parked on grass at an outdoor car show with people and tents,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4738032985280629,1.0,1.0,1.0,1.0
+query_204,person holding a bird outdoors,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.5042722296692161,0.2890648263178879,0.2890648263178879,0.1,0.1
+query_205,People in a kitchen or indoor dining area with fruit or vegetables on counters or tables,25.0,1.0,24.0,5.0,5948.0,0.04,0.2,1.0,0.4513183497376879,0.13120507751234178,0.13120507751234178,0.2,0.2
+query_206,"person using a laptop at a desk with keyboard, mouse, and desk accessories",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3017441103358708,0.6309297535714575,0.6309297535714575,0.5,0.5
+query_207,people outdoors on a grassy field holding or playing with sports equipment,25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.3195250818008646,0.0,0.0,0.0,0.0
+query_208,Urban street scene with buildings and parked buses or other vehicles,25.0,0.0,25.0,5.0,5948.0,0.0,0.0,0.0,0.42596058962909866,0.0,0.0,0.0,0.0
+query_209,Church building with tall spires and a clock tower in an urban outdoor setting,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4375826513976506,1.0,1.0,1.0,1.0
+query_210,person on a motorcycle on a road or highway (outdoor scene),25.0,2.0,23.0,2.0,5951.0,0.08,1.0,1.0,0.42251502062483137,0.7574875071481796,0.7574875071481796,1.0,1.0
+query_211,Skateboarder performing tricks or a person on a skateboard in an urban outdoor setting,25.0,0.0,25.0,1.0,5952.0,0.0,0.0,0.0,0.22958133394783942,0.0,0.0,0.0,0.0
+query_212,panoramic mountain landscape with valleys and trees,25.0,1.0,24.0,6.0,5947.0,0.04,0.16666666666666666,1.0,0.11239689288119492,0.07565060337470338,0.07565060337470338,0.06666666666666667,0.06666666666666667
+query_213,Rural pond or small lake with a dock or bridge and grassy shoreline,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.3056067225599258,0.2640681225725909,0.2640681225725909,0.25,0.25
+query_214,"Metal equipment, frames, or railings (often with cables, stakes, or monitoring posts) in grassy rural fields or meadows — close-up or eye-level outdoor shots.",25.0,1.0,24.0,6.0,5947.0,0.04,0.16666666666666666,1.0,0.30114311943904515,0.08177471774917203,0.08177471774917203,0.08333333333333333,0.08333333333333333
+query_215,"Outdoor industrial yard or parking area with concrete/asphalt ground, metal stairs/platforms and small utility vehicles or trailers",25.0,2.0,23.0,3.0,5950.0,0.08,0.6666666666666666,1.0,0.4173713542892912,0.59253456521548,0.59253456521548,1.0,1.0
+query_216,nighttime rural landscape with dark fields or low hills and a low horizon,25.0,0.0,25.0,5.0,5948.0,0.0,0.0,0.0,0.16456699094538108,0.0,0.0,0.0,0.0
+query_217,"Wide view of a forested, hilly landscape under a bright sky",25.0,0.0,25.0,5.0,5948.0,0.0,0.0,0.0,0.08660230024829707,0.0,0.0,0.0,0.0
+query_218,Nighttime outdoor scene with distant lights and visible camera overlay/timestamp or on-screen text,25.0,0.0,25.0,5.0,5948.0,0.0,0.0,0.0,0.16445343581204164,0.0,0.0,0.0,0.0
+query_219,"Very dark, low-light or underexposed photo (night/dusk/indoor) with heavy noise, grain, low contrast, or blur",25.0,0.0,25.0,8.0,5945.0,0.0,0.0,0.0,0.23315169209960673,0.0,0.0,0.0,0.0
+query_220,"daytime outdoor hillside or field landscape with distant hills or mountains, grass and trees under a clear blue sky",25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.3867321486365095,0.0,0.0,0.0,0.0
+query_221,"Indoor industrial scene of metal pipes and mounting hardware on structural supports (ceiling/upper wall), low-light or monochrome",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.10871643636660677,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_222,"Snow-covered, frozen lake or river shoreline with trees and grasses (winter lakeshore/riverbank landscape)",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.3124984264087203,0.43067655807339306,0.43067655807339306,0.25,0.25
+query_223,nighttime rural outdoor landscape with silhouetted trees and open field,25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.17787834845831862,0.24630238874073,0.24630238874073,0.5,0.5
+query_224,dark nighttime landscape or low-light night scene,25.0,0.0,25.0,6.0,5947.0,0.0,0.0,0.0,0.20309929971918128,0.0,0.0,0.0,0.0
+query_225,Aerial or wide landscape view of a dense forest or tree-covered hills/mountains under the sky,25.0,1.0,24.0,6.0,5947.0,0.04,0.16666666666666666,1.0,0.14201348821356985,0.06437746926759552,0.06437746926759552,0.04,0.04
+query_226,"dark nighttime outdoor landscape with low contrast, faint horizon or distant lights",25.0,1.0,24.0,5.0,5948.0,0.04,0.2,1.0,0.16911699737113084,0.07984133538066794,0.07984133538066794,0.05555555555555555,0.05555555555555555
+query_227,"Rural outdoor landscape with grassy fields and trees, featuring a dirt or gravel road/path and distant hills or a lake",25.0,0.0,25.0,13.0,5940.0,0.0,0.0,0.0,0.32204719437126905,0.0,0.0,0.0,0.0
+query_228,Nighttime surveillance camera image showing a timestamp or camera overlay text,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.1382383456097318,0.3065735963827292,0.3065735963827292,0.3333333333333333,0.3333333333333333
+query_229,"Close-up photo of a building exterior showing a balcony or railing, an antenna/satellite dish or pole, and nearby plants or foliage",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.4589083576648846,1.0,1.0,1.0,1.0
+query_230,"Nighttime outdoor scenes or landscapes with dark skies, silhouettes, or low-light conditions",25.0,0.0,25.0,6.0,5947.0,0.0,0.0,0.0,0.19817395709227548,0.0,0.0,0.0,0.0
+query_231,"Low-light nighttime or dusk photos — dark, noisy or monochrome images (surveillance-style or wide night scenes)",25.0,0.0,25.0,9.0,5944.0,0.0,0.0,0.0,0.27705235392235394,0.0,0.0,0.0,0.0
+query_232,"Aerial or elevated outdoor views of forested hills, mountains, or rural landscapes (trees, hills, foggy/cloudy sky).",25.0,0.0,25.0,17.0,5936.0,0.0,0.0,0.0,0.09451590276469968,0.0,0.0,0.0,0.0
+query_233,"Snow-covered rural valley with houses, fences, trees and distant mountains",25.0,2.0,23.0,6.0,5947.0,0.08,0.3333333333333333,1.0,0.21689495222325317,0.419665006636777,0.419665006636777,1.0,1.0
+query_234,"Nighttime or low-light rural grassy field / open landscape with fence posts, paths or distant bright lights (black-and-white or low-contrast outdoor scenes)",25.0,0.0,25.0,11.0,5942.0,0.0,0.0,0.0,0.13064552910239025,0.0,0.0,0.0,0.0
+query_235,Close-up indoor photo of a furniture leg or chair/table caster wheel on a tiled floor,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.16844816253492745,0.26264953503719357,0.26264953503719357,0.07692307692307693,0.07692307692307693
+query_236,"Coastal beach or shoreline landscape with ocean water, waves, and nearby trees or hills",25.0,2.0,23.0,4.0,5949.0,0.08,0.5,1.0,0.5023894888937621,0.2782418400178351,0.2782418400178351,0.3333333333333333,0.3333333333333333
+query_237,"Foggy rural landscape with a fence, field, and trees",25.0,1.0,24.0,12.0,5941.0,0.04,0.08333333333333333,1.0,0.13384814933109335,0.050259389402918644,0.050259389402918644,0.07142857142857142,0.07142857142857142
+query_238,"hillside overlook or elevated viewpoint showing a landscape with vegetation, paths, or a fence",25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.21210845880204177,0.11284514134893527,0.11284514134893527,0.1,0.1
+query_239,"Hillside or hilltop outdoor landscape with dirt clearing, shrubs, and vegetation",25.0,1.0,24.0,13.0,5940.0,0.04,0.07692307692307693,1.0,0.3397702997787826,0.0665137718990262,0.0665137718990262,0.16666666666666666,0.16666666666666666
+query_240,"Nighttime rural landscape with grassy fields, paths or fences, sparse trees and distant lights",25.0,0.0,25.0,4.0,5949.0,0.0,0.0,0.0,0.11968479062625004,0.0,0.0,0.0,0.0
+query_241,"open rural grassy field with small structures, posts or field equipment and trees",25.0,0.0,25.0,9.0,5944.0,0.0,0.0,0.0,0.1643571816757612,0.0,0.0,0.0,0.0
+query_242,Rural open grassy field or pasture with small buildings or structures and parked vehicles/equipment on a sunny day,25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.1986355987498507,0.0,0.0,0.0,0.0
+query_243,"Indoor room interior with furniture (sofa/bed/table/chairs), a table or desk cluttered with items and electronics (cables, devices), daytime lighting",25.0,1.0,24.0,10.0,5943.0,0.04,0.1,1.0,0.34544922090232344,0.05502294157452004,0.05502294157452004,0.06666666666666667,0.06666666666666667
+query_244,"Outdoor paved area or parking lot cordoned off with traffic cones, orange safety chains/fencing, or concrete barriers",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.34199505783873163,1.0,1.0,1.0,1.0
+query_245,dark nighttime outdoor landscape (low-visibility) with faint camera overlay or timestamp,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.20651766331082166,0.18154179253735267,0.18154179253735267,0.2,0.2
+query_246,Sunny rural grassy field with measurement posts or stakes and the shadow of a tall metal lattice/tower structure,25.0,0.0,25.0,6.0,5947.0,0.0,0.0,0.0,0.17428541782185125,0.0,0.0,0.0,0.0
+query_247,rural outdoor landscape with trees and a road or dirt path,25.0,0.0,25.0,11.0,5942.0,0.0,0.0,0.0,0.4007399824742316,0.0,0.0,0.0,0.0
+query_248,"Coastal waterfront landscape with grassy foreground, nearby buildings and distant island or mountain across the water",25.0,0.0,25.0,4.0,5949.0,0.0,0.0,0.0,0.4868181540711587,0.0,0.0,0.0,0.0
+query_249,"Indoor storage or office space with shelving, packed boxes, rolling office chairs, and electronic equipment",25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.38147421230622724,0.38685280723454163,0.38685280723454163,0.5,0.5
+query_250,"Outdoor lakeshore or riverside landscape with water, sky, and shoreline",25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.3347546369518001,0.08305181502178426,0.08305181502178426,0.04,0.04
+query_251,"Nighttime outdoor photo of a dome-shaped or rounded rooftop structure, possibly shown in a split visible/thermal or false-color view.",25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.2556817936678819,0.20210734650054757,0.20210734650054757,0.25,0.25
+query_252,"Wide scenic view of forested mountains, hills, and valleys (distant/aerial landscape shots)",25.0,3.0,22.0,6.0,5947.0,0.12,0.5,1.0,0.06977614343884819,0.22019709599337622,0.22019709599337622,0.09090909090909091,0.09090909090909091
+query_253,Outdoor metal observation/lookup platform with grated floor and railings overlooking a rural forested hillside or landscape,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.041615155819619054,0.0,0.0,0.0,0.0
+query_254,Nighttime close-up of a metal grated platform or scaffolding with tubular railings and clamps (outdoor industrial scene),25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.012366046669638253,0.15642624200758548,0.15642624200758548,0.14285714285714285,0.14285714285714285
+query_255,View from a metal observation platform or tower overlooking a forested valley or mountainous landscape,25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.07827739107909493,0.0,0.0,0.0,0.0
+query_256,"View from a metal grated platform or safety railing overlooking a rural hillside, forest, or field (outdoor daytime).",25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.04178287863124863,0.0,0.0,0.0,0.0
+query_257,"industrial metal grated platform or catwalk with railings, pipes, and clamps",25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.04354174533401056,0.0,0.0,0.0,0.0
+query_258,Nighttime forest landscape with tall conifer trees and streaks or trails of light in the sky,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.09339853725278735,0.6131471927654584,0.6131471927654584,1.0,1.0
+query_259,Dense coniferous forest on rolling hills and ridgelines — daytime landscape with trees and distant mountains,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.2026123179113425,0.0,0.0,0.0,0.0
+query_261,industrial metal grated walkway or platform with railings at night,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.014746356033975117,0.0,0.0,0.0,0.0
+query_262,Outdoor landscape images showing the sky and clouds,25.0,0.0,25.0,18.0,5935.0,0.0,0.0,0.0,0.30018357836757303,0.0,0.0,0.0,0.0
+query_263,Elevated view over a forest or treeline with distant hills or mountains and sky,25.0,1.0,24.0,4.0,5949.0,0.04,0.25,1.0,0.11975562401844475,0.09032543842038994,0.09032543842038994,0.05263157894736842,0.05263157894736842
+query_264,metal grated platform and scaffolding (pipes and clamps) at night,25.0,1.0,24.0,2.0,5951.0,0.04,0.5,1.0,0.01472027255076458,0.13373003436102654,0.13373003436102654,0.043478260869565216,0.043478260869565216
+query_265,Outdoor industrial metal grated platform or metal scaffolding with handrails,25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.08777973467918454,0.11731968150568911,0.11731968150568911,0.06666666666666667,0.06666666666666667
+query_266,nighttime forest or treeline silhouette under a dark sky,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.20753156432934394,0.21274605355336318,0.21274605355336318,0.04,0.04
+query_267,Nighttime rural landscape with a dark sky and treeline or open field illuminated by distant lights,25.0,0.0,25.0,4.0,5949.0,0.0,0.0,0.0,0.09458007051155903,0.0,0.0,0.0,0.0
+query_268,Starry night sky over silhouetted trees,25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.23260366983815972,0.5,0.5,0.3333333333333333,0.3333333333333333
+query_269,Nighttime outdoor photos,25.0,1.0,24.0,6.0,5947.0,0.04,0.16666666666666666,1.0,0.30343114175345665,0.06516188295518532,0.06516188295518532,0.041666666666666664,0.041666666666666664
+query_270,"Split-frame outdoor image showing a visible close-up outdoor scene (pole, vegetation, or snowy ground) on one side and a false-color thermal / infrared view of the same scene on the other side",25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.19086273008620025,0.0,0.0,0.0,0.0
+query_271,nighttime outdoor landscape or panorama with a dark scene and distant small lights on the horizon,25.0,1.0,24.0,8.0,5945.0,0.04,0.125,1.0,0.17050304443645303,0.05758752804519196,0.05758752804519196,0.05,0.05
+query_272,nighttime outdoor photo with timestamp or camera overlay text in the corner,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.2598782732482847,0.0,0.0,0.0,0.0
+query_273,Foggy coniferous forest on a hillside / misty forested landscape with evergreen trees,25.0,1.0,24.0,6.0,5947.0,0.04,0.16666666666666666,1.0,0.2727971942562333,0.06785672242044201,0.06785672242044201,0.047619047619047616,0.047619047619047616
+query_274,Mountain landscape or forested hilltop with a communications/radio tower or antenna dishes,25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.2652184784391718,0.0,0.0,0.0,0.0
+query_275,snow-covered coniferous forest landscape with evergreen trees and long shadows (daytime),25.0,0.0,25.0,5.0,5948.0,0.0,0.0,0.0,0.34270817090029015,0.0,0.0,0.0,0.0
+query_276,Nighttime seascape showing a dark ocean with a visible horizon (may include false-color/thermal split view),25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.2018706162483649,0.3010299956639812,0.3010299956639812,0.1111111111111111,0.1111111111111111
+query_277,Forested hillside landscape with cloudy sky,25.0,1.0,24.0,7.0,5946.0,0.04,0.14285714285714285,1.0,0.17074848107530438,0.08671382849411974,0.08671382849411974,0.125,0.125
+query_278,"panoramic outdoor mountain/valley landscape with hills, trees and open sky (daytime)",25.0,0.0,25.0,9.0,5944.0,0.0,0.0,0.0,0.11383433891966621,0.0,0.0,0.0,0.0
+query_279,"Outdoor natural vegetation: grassy fields, bushes and low plants on rural hillsides or landscapes",25.0,1.0,24.0,15.0,5938.0,0.04,0.06666666666666667,1.0,0.3482730168192092,0.0734773909038217,0.0734773909038217,0.25,0.25
+query_280,"Open rural grassy field or countryside with rolling hills, scattered trees and a small pond or water feature",25.0,1.0,24.0,10.0,5943.0,0.04,0.1,1.0,0.2757876211861441,0.053845569940583225,0.053845569940583225,0.0625,0.0625
+query_281,"Foggy or overcast rural landscape with a road/path, grassy fields and utility poles or fences",25.0,1.0,24.0,14.0,5939.0,0.04,0.07142857142857142,1.0,0.23948145139837362,0.049710505523782283,0.049710505523782283,0.09090909090909091,0.09090909090909091
+query_282,"Rural grassy field or pasture with a dirt road/path, fences or utility poles, photographed outdoors (daytime or dusk).",25.0,1.0,24.0,7.0,5946.0,0.04,0.14285714285714285,1.0,0.2525899652771484,0.059951707973850674,0.059951707973850674,0.043478260869565216,0.043478260869565216
+query_283,open grassy outdoor field or park landscape with sky and trees,25.0,0.0,25.0,15.0,5938.0,0.0,0.0,0.0,0.2644694053515083,0.0,0.0,0.0,0.0
+query_284,"Outdoor rural grassy field or open field with scattered monitoring equipment, small utility structures or paved path under a cloudy/overcast sky",25.0,1.0,24.0,10.0,5943.0,0.04,0.1,1.0,0.13978441885519455,0.07336392209936005,0.07336392209936005,0.14285714285714285,0.14285714285714285
+query_285,nighttime rural field with lights along the horizon,25.0,0.0,25.0,1.0,5952.0,0.0,0.0,0.0,0.08055762526275678,0.0,0.0,0.0,0.0
+query_286,wide grassy field or pasture with a road or path and scattered poles or equipment,25.0,0.0,25.0,9.0,5944.0,0.0,0.0,0.0,0.20149266134884924,0.0,0.0,0.0,0.0
+query_287,Daytime rural grassy field landscape with a road or path and scattered equipment (wide outdoor scene),25.0,0.0,25.0,8.0,5945.0,0.0,0.0,0.0,0.06991797170661829,0.0,0.0,0.0,0.0
+query_288,"Nighttime rural landscape with a road or path, grassy fields, and distant lights on the horizon",25.0,1.0,24.0,6.0,5947.0,0.04,0.16666666666666666,1.0,0.09535107745053095,0.1909208661789347,0.1909208661789347,0.5,0.5
+query_289,"Wide daytime rural landscape — grassy field or pasture with a dirt road or path, scattered equipment/fences or trees under a partly cloudy sky",25.0,0.0,25.0,13.0,5940.0,0.0,0.0,0.0,0.13660094380283638,0.0,0.0,0.0,0.0
+query_290,Wide outdoor shot of a grassy rural field or meadow with trees and sky,25.0,0.0,25.0,12.0,5941.0,0.0,0.0,0.0,0.1825445461118519,0.0,0.0,0.0,0.0
+query_291,Wide aerial/overhead or wide view of a rural grassy field or open countryside with scattered equipment/posts and a road,25.0,2.0,23.0,10.0,5943.0,0.08,0.2,1.0,0.12408281519206221,0.1610425878239398,0.1610425878239398,0.25,0.25
+query_292,Open grassy rural field with scattered monitoring equipment and a road,25.0,1.0,24.0,5.0,5948.0,0.04,0.2,1.0,0.1500775795379854,0.3391602052736161,0.3391602052736161,1.0,1.0
+query_293,"Indoor cluttered workstation or desk with electronics, cables, computer equipment, and tools",25.0,0.0,25.0,3.0,5950.0,0.0,0.0,0.0,0.24551772357427093,0.0,0.0,0.0,0.0
+query_294,"Close-up indoor shot of industrial metal pipes, hoses, or cables attached to a ceiling or wall",25.0,1.0,24.0,1.0,5952.0,0.04,1.0,1.0,0.25766981046531257,0.3010299956639812,0.3010299956639812,0.1111111111111111,0.1111111111111111
+query_295,"Nighttime rural outdoor scene with houses, trees and cars (vehicle headlights)",25.0,2.0,23.0,3.0,5950.0,0.08,0.6666666666666666,1.0,0.24447378169646894,0.617319681505689,0.617319681505689,1.0,1.0
+query_296,"Rural outdoor landscape with fields, hills or mountains and houses",25.0,1.0,24.0,7.0,5946.0,0.04,0.14285714285714285,1.0,0.3199527275762565,0.07219614103266733,0.07219614103266733,0.07692307692307693,0.07692307692307693
+query_297,"Rural landscape with farmhouses or barns, fenced fields and distant hills or mountains",25.0,0.0,25.0,5.0,5948.0,0.0,0.0,0.0,0.10746700825895539,0.0,0.0,0.0,0.0
+query_298,Split-screen display showing a dark grayscale/sensor image on one side and a colorful false-color heatmap/thermal visualization with UI overlays on the other,25.0,0.0,25.0,2.0,5951.0,0.0,0.0,0.0,0.19892463852789177,0.0,0.0,0.0,0.0
+query_299,"Rural outdoor field or scrubland with low vegetation, gravel or dirt ground, and small utility buildings or monitoring equipment",25.0,0.0,25.0,18.0,5935.0,0.0,0.0,0.0,0.2171172105498944,0.0,0.0,0.0,0.0
+query_300,"Outdoor parking lot or street with parked vehicles in front of commercial buildings/shops, daytime",25.0,1.0,24.0,3.0,5950.0,0.04,0.3333333333333333,1.0,0.416007706300797,0.11047239495909743,0.11047239495909743,0.05555555555555555,0.05555555555555555

@@ -1,0 +1,24 @@
+{
+  "file_name": "edge_v1_benchmarks.npz",
+  "format_version": 1,
+  "source": "edge_v1",
+  "model_id": "apple/DFN5B-CLIP-ViT-H-14-378",
+  "record_count": 32177,
+  "vector_dimension": 1024,
+  "contains": [
+    "caption_text",
+    "image_vector",
+    "dataset",
+    "image_id",
+    "relative_image_path"
+  ],
+  "dataset_counts": {
+    "cloudbench": 2853,
+    "commonobjectsbench": 5953,
+    "firebench": 2169,
+    "inquire-small": 19280,
+    "sagebench": 1922
+  },
+  "size_bytes": 166453108,
+  "sha256": "de5f85fa4ca7e0ea7240489587ca3e5a204b1c89629c55e6879c5de65a1fa557"
+}

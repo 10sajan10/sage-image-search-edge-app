@@ -11,6 +11,10 @@ Included for all five benchmarks:
 - `v10`
 - `v11`
 - `v12`
+- `edge_v1`
+- `edge_v2`
 
-The `edge_v1` and `edge_v2` directories are intentionally excluded. The
-notebook generates both edge result sets from their portable vector exports.
+The checked Edge result CSVs come from `ImageSearchatEdge` commit `6c79f16`
+and make the completed runs directly inspectable on GitHub. The notebook does
+not load those two saved versions into its comparison: it still generates
+fresh Edge v1 and Edge v2 results from their portable vector exports.

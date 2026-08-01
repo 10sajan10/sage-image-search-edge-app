@@ -1,0 +1,15 @@
+Config Variable,Value,Type
+query_method,manual three-way min-max normalized score fusion,str
+advanced_query_parameters,"{""weight_image_clip"": 0.6, ""weight_caption_clip"": 0.25, ""weight_bm25"": 0.15, ""bm25_query_properties"": [""caption^2""], ""normalization"": ""min-max over full isolated-dataset candidate pool, per leg""}",dict
+response_limit,25,int
+scope,isolated,str
+caption_model_name,"gemma4:e2b (Ollama, thinking enabled, local)",str
+embed_model,"DFN5B-CLIP-ViT-H-14-378 (float16, on-device)",str
+enable_caption_generation,True,bool
+embed_image,True,bool
+embed_caption,True,bool
+reranker,none (dropped -- see claude.md architectural decision #5),str
+target_vectors,image_clip (60%) + caption_clip (25%),str
+hardware,"NVIDIA Jetson AGX Thor, single node, airgapped",str
+hnsw_dist_metric,cosine,str
+hnsw_vector_cache_max_objects,100000,int

@@ -35,11 +35,12 @@ vectors.
 - Caption representations: dense caption vector plus caption text for BM25.
 - Benchmark fusion: 60% image vector, 25% caption vector, and 15% caption BM25.
 
-edge_v2 is never rebuilt in this notebook. `data/edge_v2_benchmarks.npz` must
-be an export from the completed run and contains all 32,177 caption strings,
-image vectors, caption vectors, image IDs, and relative image paths. The
-tracked `edge_v2_export_manifest.json` identifies the expected file by model,
-shape, dataset counts, byte size, and SHA-256 checksum.
+edge_v2 is never rebuilt in this notebook. `data/edge_v2_benchmarks.npz` is an
+export from the completed run and contains all 32,177 caption strings, image
+vectors, caption vectors, image IDs, and relative image paths. Both NPZ files
+are tracked with Git LFS. The tracked `edge_v1_export_manifest.json` and
+`edge_v2_export_manifest.json` identify them by model, shape, dataset counts,
+byte size, and SHA-256 checksum.
 
 `PortableIndex.caption_vectors`, the NPZ `caption_vectors` entry, and SQLite's
 `caption_vector` column persist the dense caption leg. Requesting a positive
@@ -86,17 +87,20 @@ data/generated_benchmarks/edge_v2
 data/generated_benchmarks/all_comparison_query_results.csv
 ```
 
-Bundled reference results include `baseline`, `v10`, `v11`, and `v12`. Saved
-edge result scores are not loaded by the notebook; both edge rows are generated
-from the selected portable files. Historical systems do not all share one
-evaluation protocol, so the tables remain demonstration comparisons rather
-than publication-quality head-to-head claims.
+Bundled results include `baseline`, `v10`, `v11`, `v12`, `edge_v1`, and
+`edge_v2`. The saved Edge CSVs are available for direct inspection but are not
+loaded by the notebook; both Edge rows are generated from the selected
+portable files. Historical systems do not all share one evaluation protocol,
+so the tables remain demonstration comparisons rather than
+publication-quality head-to-head claims.
 
 ## NDP/Jupyter setup
 
 ```bash
 git clone https://github.com/10sajan10/sage-image-search-edge-app
 cd sage-image-search-edge-app/notebooks/ndp_workspace
+git lfs install
+git lfs pull
 cp .env.example .env
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
@@ -106,8 +110,9 @@ python -m venv .venv
 ```
 
 Set `HF_TOKEN` in `.env` when downloading datasets or building the optional
-edge_v1 image index. The large NPZ exports and downloaded benchmark data are
-runtime artifacts under `data/` and are intentionally ignored by Git.
+edge_v1 image index. The two NPZ exports are versioned through Git LFS;
+downloaded benchmark data, extracted images, model caches, generated SQLite
+files, and newly generated result files under `data/` remain ignored.
 
 The final cell prompts once, runs the query against both versions, and displays
 the fused score, weighted leg contributions, raw similarities, caption, image,
