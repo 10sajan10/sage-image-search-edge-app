@@ -13,4 +13,4 @@ Included for all five benchmarks:
 - `v12`
 
 The `edge_v1` and `edge_v2` directories are intentionally excluded. The
-notebook generates its new edge result from the selected portable vector file.
+notebook generates both edge result sets from their portable vector exports.

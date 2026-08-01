@@ -1,104 +1,98 @@
-# NRP workspace benchmark search
+# NDP workspace benchmark search
 
 This directory is a standalone Jupyter workflow for all five Sage image-search
 benchmarks. It optionally downloads the pinned Hugging Face datasets,
-materializes their images, builds or restores image vectors, populates an
-embedded SQLite database, generates fresh edge_v1 benchmark results, and runs
-custom visual searches returning 25 results.
+materializes their images, restores edge_v1 and edge_v2 vector exports into
+embedded SQLite files, generates fresh benchmark comparisons, and runs the
+same custom query against both versions with 25 rendered results each.
 
-## Retrieval legs
+## Models and retrieval
 
-Search fuses up to three legs. **edge_v1 uses two**: a CLIP **image vector**,
-and **BM25 over the Gemma captions**. Captions are not embedded as dense
-vectors, because `baseline`, `v10`, `v11`, and `v12` all ran
-`clip_hybrid_query` against a single `clip` image vector with the caption text
-searched lexically (`alpha=0.4` for v10–v12, `1.0` for baseline) — a dense
-caption leg would not be comparable to any of them. The default
-`IMAGE_WEIGHT=0.40` / `BM25_WEIGHT=0.60` mirrors that `alpha=0.4` split.
+The version descriptions deliberately focus on the captioning and embedding
+models; the notebook's local storage mechanism is an implementation detail.
 
-The third leg stays first-class for **edge_v2**, which will have caption
-vectors:
+### edge_v1
 
-```python
-EMBED_CAPTIONS = True     # build_index embeds captions with the same encoder
-CAPTION_WEIGHT = 0.25     # then the dense caption leg contributes
-```
+- Captioner: `gemma-3-4b-it`, served through vLLM, deterministic generation,
+  approximately 150 words per image.
+- Embedder: `apple/DFN5B-CLIP-ViT-H-14-378`, FP16, normalized 1024-dimensional
+  image vectors.
+- Caption representation: stored text searched with BM25; no dense caption
+  vector.
+- Benchmark fusion: 75% image vector and 25% caption BM25.
 
-`PortableIndex.caption_vectors`, the NPZ `caption_vectors` entry, and the
-SQLite `caption_vector` column all persist the leg; they are `None`/NULL for an
-image-only index. Passing `caption_weight > 0` to `search_index` or
-`evaluate_benchmarks` against an index with no caption vectors **raises**
-rather than silently reweighting — quietly zeroing it would let an edge_v1 and
-an edge_v2 run report identical configured weights while fusing differently,
-making their benchmark scores look comparable when they are not.
+The notebook can restore the exported edge_v1 NPZ or build a user-owned image
+index with `timm/MobileCLIP2-S0-OpenCLIP`. Build mode reuses the bundled Gemma
+3 captions and never launches the caption model. It does not create caption
+vectors.
 
-Reported component scores are normalized the same way as the fused total, so
-`score == image_score + caption_score + bm25_score` exactly. Raw
-`image_similarity` (cosine) and `bm25_raw` are reported alongside.
+### edge_v2
+
+- Captioner: Ollama `gemma4:e2b`, thinking enabled, approximately 50 words per
+  image so the caption fits DFN5B-CLIP's 77-token text limit.
+- Embedder: `apple/DFN5B-CLIP-ViT-H-14-378`, FP16, normalized 1024-dimensional
+  image and caption vectors.
+- Caption representations: dense caption vector plus caption text for BM25.
+- Benchmark fusion: 60% image vector, 25% caption vector, and 15% caption BM25.
+
+edge_v2 is never rebuilt in this notebook. `data/edge_v2_benchmarks.npz` must
+be an export from the completed run and contains all 32,177 caption strings,
+image vectors, caption vectors, image IDs, and relative image paths. The
+tracked `edge_v2_export_manifest.json` identifies the expected file by model,
+shape, dataset counts, byte size, and SHA-256 checksum.
+
+`PortableIndex.caption_vectors`, the NPZ `caption_vectors` entry, and SQLite's
+`caption_vector` column persist the dense caption leg. Requesting a positive
+caption weight against an index without that leg raises an error rather than
+silently changing the configured fusion.
 
 ## Configuration choices
 
-The configuration cell asks the user to make two choices:
+The notebook asks the user to:
 
-- Download all benchmark data with the `HF_TOKEN` stored in `.env`, or reuse
-  benchmark data already present under this workspace.
-- Build vectors for every Gemma-covered benchmark image, or restore vectors
-  from an NPZ backup.
+- download all benchmark data with `HF_TOKEN`, or reuse local Parquet files;
+- build edge_v1 image vectors or restore its NPZ export;
+- confirm the path to the exported edge_v2 NPZ.
 
-In build mode, captions come exclusively from the bundled original Gemma 3
-export:
+The two portable indexes are copied into separate serverless SQLite files:
 
 ```text
-assets/gemma3_4b_it_edge_v1_benchmark_captions.jsonl
+data/vector_database/edge_v1_benchmarks.sqlite3
+data/vector_database/edge_v2_benchmarks.sqlite3
 ```
 
-Each source row identifies `model` as `gemma-3-4b-it`. The notebook does not
-launch Gemma and does not replace these captions with benchmark summaries. It
-resolves the captions to downloaded image paths, embeds each covered image
-(and, with `EMBED_CAPTIONS = True`, each caption) using `MOBILECLIP_MODEL_ID`,
-then saves the result as `data/backups/<model>_benchmarks.npz` — a separate
-file, so a build never overwrites the bundled backup. In backup mode the user
-enters the path to an existing compatible NPZ file; that default is the bundled
-edge_v1 `apple/DFN5B-CLIP-ViT-H-14-378` image index, which is gitignored, so on
-a fresh clone choose **build**.
+Each file stores dataset, image ID, caption, relative image path, image vector,
+optional caption vector, and the embedding model ID. SQLite runs directly in
+Python; no database container is required by the NDP notebook.
 
-Both modes populate `data/vector_database/mobileclip2_benchmarks.sqlite3`.
-SQLite is the file-based database: it stores dataset, image ID, caption, image
-path, image vector, an optional caption vector, and model metadata. It runs
-directly in Python and requires no container, service, or external database.
+The original edge_v1 population missed 35 CloudBench images after caption
+requests timed out. They were later regenerated with the original Gemma 3
+pipeline, bringing both version exports to the complete 32,177-image corpus.
 
-The Gemma export covers all 32,177 benchmark images.
+## Benchmark output
 
-The original edge_v1 run left 35 CloudBench images uncaptioned: every one failed
-with `RuntimeError('timed out')`, in three short bursts on a single node, so
-their images extracted fine but the population step skipped them and the
-collection settled at 32,142. They were backfilled with
-`ImageSearchatEdge/scripts/backfill_missing_captions.py`, which re-runs the
-original pipeline's own functions -- same `gemma-3-4b-it` endpoint, prompt,
-caption cleaner, DFN5B encoder, deterministic UUID, and object payload -- so the
-backfilled records are structurally identical to the rest. They were never
-replaced with non-Gemma text.
+The notebook creates fresh local edge_v1 and edge_v2 runs from their exported
+vectors and public Parquet relevance labels. It reports every per-query row and
+summaries for FireBench, CloudBench, INQUIRE, CommonObjectsBench, SageBench,
+and equal-weight overall results. Metrics include MRR, Success@25,
+Diversity@25, the two-metric primary score, and the primary-plus-diversity
+score.
 
-Before the free-form search demo, the notebook generates a new edge_v1
-per-query run from the SQLite database and public Parquet relevance labels. It
-writes those results below `data/generated_benchmarks/`, then shows one
-comparison cell each for FireBench, CloudBench, INQUIRE, CommonObjectsBench,
-SageBench, and an equal-weight overall table. Each table contains MRR,
-Success@25, Diversity@25, the two-metric primary score, and the three-metric
-primary-plus-diversity score. Each benchmark cell also exposes every per-query
-row, and the complete combined dataset is saved as
-`data/generated_benchmarks/all_comparison_query_results.csv`.
+Generated files are written below:
 
-Every per-query comparison CSV from
-`ImageSearchatEdge@049f6384d7e80c11666701bb320a09727a7d8133` is bundled under
-`results/benchmarks/*/results/{baseline,v10,v11,v12}`. The notebook therefore
-does not depend on the separate ImageSearchatEdge GitHub repository. Existing
-`edge_v1` and `edge_v2` result directories are intentionally absent: the
-selected index's fresh row is computed by this notebook. Historical versions
-do not all share an identical evaluation protocol, so the tables are
-demonstration comparisons rather than publication-quality head-to-head claims.
+```text
+data/generated_benchmarks/edge_v1
+data/generated_benchmarks/edge_v2
+data/generated_benchmarks/all_comparison_query_results.csv
+```
 
-## NRP/Jupyter setup
+Bundled reference results include `baseline`, `v10`, `v11`, and `v12`. Saved
+edge result scores are not loaded by the notebook; both edge rows are generated
+from the selected portable files. Historical systems do not all share one
+evaluation protocol, so the tables remain demonstration comparisons rather
+than publication-quality head-to-head claims.
+
+## NDP/Jupyter setup
 
 ```bash
 git clone https://github.com/10sajan10/sage-image-search-edge-app
@@ -111,23 +105,10 @@ python -m venv .venv
   --display-name "Sage image search (NRP)"
 ```
 
-Set `HF_TOKEN` in `.env`. The notebook requires it whenever the user chooses to
-download benchmark data or build vectors. Interactive choices and
-internal paths are deliberately not stored in `.env`.
+Set `HF_TOKEN` in `.env` when downloading datasets or building the optional
+edge_v1 image index. The large NPZ exports and downloaded benchmark data are
+runtime artifacts under `data/` and are intentionally ignored by Git.
 
-Benchmark paths are not environment variables. The notebook creates its own
-clone-relative directories automatically:
-
-```text
-ndp_workspace/data/benchmarking/datasets
-ndp_workspace/data/benchmarking/images
-ndp_workspace/data/gemma3_4b_it_edge_v1_benchmark_captions_resolved.jsonl
-ndp_workspace/data/edge_v1_benchmarks.npz          (bundled, backup mode)
-ndp_workspace/data/backups/<model>_benchmarks.npz  (written by build mode)
-ndp_workspace/data/vector_database/mobileclip2_benchmarks.sqlite3
-ndp_workspace/data/generated_benchmarks
-```
-
-The final cell prompts for a custom text query and prints each result's fused
-score, its weighted per-leg components (which sum to the score), the raw
-cosine and BM25 values, caption, rendered image, image ID, and stored path.
+The final cell prompts once, runs the query against both versions, and displays
+the fused score, weighted leg contributions, raw similarities, caption, image,
+image ID, and stored path.

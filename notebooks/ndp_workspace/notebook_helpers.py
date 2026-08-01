@@ -84,9 +84,8 @@ class PortableIndex:
     `caption_vectors` is None for edge_v1 and the caption leg is simply not
     used.
 
-    edge_v2 will populate `caption_vectors`, so the leg stays first-class
-    throughout: build it with `build_index(embed_captions=True)`, then pass a
-    non-zero `caption_weight`. Requesting a caption weight against an index
+    edge_v2 populates `caption_vectors`, so the leg stays first-class
+    throughout. Requesting a caption weight against an index
     that has no caption vectors is an error rather than a silent reweighting --
     silently dropping the leg would make two runs look comparable when their
     fusion differed.
@@ -586,6 +585,30 @@ def _relative_topk_fusion(
     return fused, ordered, contributions
 
 
+def _relative_full_corpus_fusion(
+    score_legs: Sequence[np.ndarray],
+    weights: np.ndarray,
+    top_k: int,
+) -> tuple[np.ndarray, np.ndarray, list[np.ndarray]]:
+    """Min-max normalize every leg over the complete corpus, then combine.
+
+    This is edge_v2's benchmark method. Unlike edge_v1's native Weaviate
+    hybrid candidate fusion, both dense matrices are available locally, so
+    all candidates participate in each leg before the top-K is selected.
+    """
+    length = len(score_legs[0])
+    count = min(top_k, length)
+    if count < 1:
+        raise ValueError("Cannot fuse an empty index")
+    contributions = [
+        weight * _relative_score(scores) if weight > 0 else np.zeros(length)
+        for scores, weight in zip(score_legs, weights)
+    ]
+    fused = np.sum(contributions, axis=0)
+    ordered = np.argsort(-fused, kind="stable")[:count]
+    return fused, ordered, contributions
+
+
 def resolve_weights(
     index: PortableIndex,
     image_weight: float,
@@ -622,6 +645,7 @@ def search_index(
     image_weight: float = 0.40,
     caption_weight: float = 0.0,
     bm25_weight: float = 0.60,
+    fusion_mode: str = "topk",
 ) -> list[dict[str, Any]]:
     """Fuse the image-vector leg, the optional caption-vector leg, and BM25."""
     from rank_bm25 import BM25Okapi
@@ -643,14 +667,15 @@ def search_index(
     bm25 = BM25Okapi([tokenize(record.caption) for record in index.records])
     bm25_raw = np.asarray(bm25.get_scores(tokenize(query)), dtype=np.float64)
     count = min(top_k, len(index.records))
-    fused, ordered, contributions = _relative_topk_fusion(
-        [
-            _relative_score(image_similarity),
-            _relative_score(caption_similarity),
-            _relative_score(bm25_raw),
-        ],
-        weights,
-        count,
+    fusion = (
+        _relative_full_corpus_fusion
+        if fusion_mode == "full_corpus"
+        else _relative_topk_fusion
+    )
+    if fusion_mode not in {"topk", "full_corpus"}:
+        raise ValueError(f"Unknown fusion_mode: {fusion_mode}")
+    fused, ordered, contributions = fusion(
+        [image_similarity, caption_similarity, bm25_raw], weights, count
     )
     return [
         {
@@ -661,6 +686,7 @@ def search_index(
             "caption_score": float(contributions[1][position]),
             "bm25_score": float(contributions[2][position]),
             "image_similarity": float(image_similarity[position]),
+            "caption_similarity": float(caption_similarity[position]),
             "bm25_raw": float(bm25_raw[position]),
             **index.records[position].__dict__,
         }
@@ -703,6 +729,7 @@ def _benchmark_scores(
     caption_weight: float,
     bm25_weight: float,
     batch_size: int,
+    fusion_mode: str,
 ) -> list[dict[str, Any]]:
     """Run exact, file-local retrieval and return per-query Success@K and RR."""
     from rank_bm25 import BM25Okapi
@@ -731,7 +758,14 @@ def _benchmark_scores(
         bm25_scores = _relative_score(
             np.asarray(bm25.get_scores(tokenize(query.text)), dtype=np.float32)
         )
-        _fused, ordered, _contributions = _relative_topk_fusion(
+        fusion = (
+            _relative_full_corpus_fusion
+            if fusion_mode == "full_corpus"
+            else _relative_topk_fusion
+        )
+        if fusion_mode not in {"topk", "full_corpus"}:
+            raise ValueError(f"Unknown fusion_mode: {fusion_mode}")
+        _fused, ordered, _contributions = fusion(
             [image_scores, caption_scores, bm25_scores], weights, count
         )
         ranked_ids = [records[int(position)].image_id for position in ordered]
@@ -772,6 +806,7 @@ def evaluate_benchmarks(
     bm25_weight: float = 0.60,
     batch_size: int = 64,
     system_version: str | None = None,
+    fusion_mode: str = "topk",
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Generate a fresh benchmark run from the selected portable vector file."""
     if encoder.model_id != index.model_id:
@@ -797,6 +832,7 @@ def evaluate_benchmarks(
             caption_weight=caption_weight,
             bm25_weight=bm25_weight,
             batch_size=batch_size,
+            fusion_mode=fusion_mode,
         )
         run_label = system_version or (
             f"edge_v1 (generated; {index.model_id.rsplit('/', 1)[-1]})"
@@ -975,7 +1011,9 @@ def show_results(results: Sequence[dict[str, Any]], image_root: Path, width: int
                 + BM25 {row['bm25_score']:.4f}
               </div>
               <div style="font-size:11px;color:#666">
-                cosine={row['image_similarity']:.4f} · BM25 raw={row['bm25_raw']:.2f}
+                image cosine={row['image_similarity']:.4f}
+                {f"· caption cosine={row['caption_similarity']:.4f} " if show_caption_leg else ""}
+                · BM25 raw={row['bm25_raw']:.2f}
               </div>
               {image_html}
               <code style="font-size:11px">{html.escape(row['image_id'])}</code>
