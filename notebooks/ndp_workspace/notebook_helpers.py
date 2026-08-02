@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
-import io
 import csv
+import hashlib
+import io
 import json
 import math
 import os
 import re
 import sqlite3
+import urllib.request
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Sequence
@@ -64,6 +66,14 @@ EVALUATION_COLUMNS = {
 }
 
 PORTABLE_INDEX_VERSION = 1
+PORTABLE_INDEX_DOWNLOAD_BASE = (
+    "https://media.githubusercontent.com/media/10sajan10/"
+    "sage-image-search-edge-app/main/notebooks/ndp_workspace/data"
+)
+PORTABLE_INDEX_FILENAMES = {
+    "edge_v1_benchmarks.npz",
+    "edge_v2_benchmarks.npz",
+}
 
 
 @dataclass(frozen=True)
@@ -280,16 +290,97 @@ def save_portable_index(index: PortableIndex, path: Path) -> None:
     print(f"Saved {len(index.records):,} records to {path} ({path.stat().st_size / 2**20:.1f} MiB)")
 
 
+def _lfs_pointer_metadata(path: Path) -> tuple[str, int] | None:
+    """Return the SHA-256 and byte size stored in a Git LFS pointer."""
+    with path.open("rb") as source:
+        content = source.read(1024)
+    if not content.startswith(b"version https://git-lfs.github.com/spec/v1"):
+        return None
+    text = content.decode("ascii")
+    oid = re.search(r"^oid sha256:([0-9a-f]{64})$", text, re.MULTILINE)
+    size = re.search(r"^size ([0-9]+)$", text, re.MULTILINE)
+    if oid is None or size is None:
+        raise ValueError(f"Invalid Git LFS pointer: {path}")
+    return oid.group(1), int(size.group(1))
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        while chunk := source.read(8 * 2**20):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _materialize_portable_index(path: Path) -> Path:
+    """Return a verified NPZ, downloading one when given an LFS pointer."""
+    metadata = _lfs_pointer_metadata(path)
+    if metadata is None:
+        return path
+    if path.name not in PORTABLE_INDEX_FILENAMES:
+        raise RuntimeError(
+            f"{path} is a Git LFS pointer and has no automatic download source."
+        )
+
+    expected_sha256, expected_size = metadata
+    url = f"{PORTABLE_INDEX_DOWNLOAD_BASE}/{path.name}"
+    cache = path.parent / ".portable_index_cache" / path.name
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    if (
+        cache.is_file()
+        and cache.stat().st_size == expected_size
+        and _file_sha256(cache) == expected_sha256
+    ):
+        print(f"Using verified local cache for {path.name}")
+        return cache
+
+    temporary = cache.with_suffix(cache.suffix + ".download")
+    digest = hashlib.sha256()
+    received = 0
+    print(
+        f"{path.name}: this clone contains a small Git LFS pointer; "
+        f"downloading the {expected_size / 2**20:.1f} MiB index automatically."
+    )
+    try:
+        with (
+            urllib.request.urlopen(url, timeout=120) as response,
+            temporary.open("wb") as output,
+        ):
+            while chunk := response.read(8 * 2**20):
+                output.write(chunk)
+                digest.update(chunk)
+                received += len(chunk)
+                print(
+                    f"\r{path.name}: {received / 2**20:.1f} / "
+                    f"{expected_size / 2**20:.1f} MiB",
+                    end="",
+                    flush=True,
+                )
+        print()
+        if received != expected_size:
+            raise RuntimeError(
+                f"Incomplete download for {path.name}: expected {expected_size:,} "
+                f"bytes, received {received:,}."
+            )
+        actual_sha256 = digest.hexdigest()
+        if actual_sha256 != expected_sha256:
+            raise RuntimeError(
+                f"Checksum mismatch for {path.name}: expected {expected_sha256}, "
+                f"received {actual_sha256}."
+            )
+        temporary.replace(cache)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
+    print(f"Downloaded and verified {path.name}")
+    return cache
+
+
 def load_portable_index(path: Path) -> PortableIndex:
     if not path.is_file():
         raise FileNotFoundError(f"Portable vector index not found: {path}")
-    with path.open("rb") as source:
-        if source.read(40).startswith(b"version https://git-lfs.github.com"):
-            raise RuntimeError(
-                f"{path} is only a Git LFS pointer. Install Git LFS and run "
-                "`git lfs pull` from the repository root."
-            )
-    with np.load(path, allow_pickle=False) as archive:
+    resolved_path = _materialize_portable_index(path)
+    with np.load(resolved_path, allow_pickle=False) as archive:
         metadata = json.loads(archive["metadata"].tobytes().decode("utf-8"))
         if metadata.get("format_version") != PORTABLE_INDEX_VERSION:
             raise ValueError(f"Unsupported index format: {metadata.get('format_version')}")
@@ -309,7 +400,7 @@ def load_portable_index(path: Path) -> PortableIndex:
         )
     index.validate()
     print(
-        f"Loaded {len(index.records):,} records from {path}; "
+        f"Loaded {len(index.records):,} records from {resolved_path}; "
         f"model={index.model_id}, source={index.source}"
     )
     return index

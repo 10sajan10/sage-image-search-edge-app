@@ -42,6 +42,12 @@ are tracked with Git LFS. The tracked `edge_v1_export_manifest.json` and
 `edge_v2_export_manifest.json` identify them by model, shape, dataset counts,
 byte size, and SHA-256 checksum.
 
+Managed Jupyter users do not need to install or run Git LFS. If a normal clone
+contains only a small LFS pointer, the notebook downloads the corresponding
+NPZ into an ignored local cache, verifies its byte size and SHA-256, and
+continues. Later runs reuse the cache. A clone that already contains the real
+NPZ is reused as-is.
+
 For direct inspection without loading NumPy, the exact Edge v2 caption text
 and image paths are also tracked in
 `assets/ollama_gemma4_e2b_edge_v2_benchmark_captions.jsonl`.
@@ -104,8 +110,6 @@ publication-quality head-to-head claims.
 ```bash
 git clone https://github.com/10sajan10/sage-image-search-edge-app
 cd sage-image-search-edge-app/notebooks/ndp_workspace
-git lfs install
-git lfs pull
 cp .env.example .env
 python -m venv .venv
 .venv/bin/pip install -r requirements.txt
@@ -115,9 +119,18 @@ python -m venv .venv
 ```
 
 Set `HF_TOKEN` in `.env` when downloading datasets. The two NPZ exports are
-versioned through Git LFS;
+versioned through Git LFS but are resolved automatically by the notebook;
 downloaded benchmark data, extracted images, model caches, generated SQLite
 files, and newly generated result files under `data/` remain ignored.
+
+The five pinned benchmark datasets are intentionally not committed to this
+Git repository. Their Parquet files occupy about 12 GiB before image
+extraction, exceed a typical free Git LFS storage allowance, and would make
+every lab checkout unnecessarily large. For a classroom deployment, publish
+the downloaded `data/benchmarking/datasets` directory as one NDP catalog asset
+and mount or copy it to that same path before opening the notebook. Users can
+then answer `no` to the notebook's download prompt; it reuses those Parquet
+files and still performs image extraction.
 
 The final cell prompts once, runs the query against both versions, and displays
 the fused score, weighted leg contributions, raw similarities, caption, image,
