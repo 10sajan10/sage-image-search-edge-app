@@ -21,10 +21,10 @@ models; the notebook's local storage mechanism is an implementation detail.
   vector.
 - Benchmark fusion: 75% image vector and 25% caption BM25.
 
-The notebook can restore the exported edge_v1 NPZ or build a user-owned image
-index with `timm/MobileCLIP2-S0-OpenCLIP`. Build mode reuses the bundled Gemma
-3 captions and never launches the caption model. It does not create caption
-vectors.
+The notebook always restores the exported Edge v1 NPZ. This guarantees that
+the benchmark and custom search use the original DFN5B-CLIP vectors rather
+than silently building a different configuration with another embedding
+model.
 
 ### edge_v2
 
@@ -56,7 +56,7 @@ silently changing the configured fusion.
 The notebook asks the user to:
 
 - download all benchmark data with `HF_TOKEN`, or reuse local Parquet files;
-- build edge_v1 image vectors or restore its NPZ export;
+- confirm the path to the exported edge_v1 NPZ;
 - confirm the path to the exported edge_v2 NPZ.
 
 The two portable indexes are copied into separate serverless SQLite files:
@@ -81,7 +81,8 @@ vectors and public Parquet relevance labels. It reports every per-query row and
 summaries for FireBench, CloudBench, INQUIRE, CommonObjectsBench, SageBench,
 and equal-weight overall results. Metrics include MRR, Success@25,
 Diversity@25, the two-metric primary score, and the primary-plus-diversity
-score.
+score. Every summary table is followed by side-by-side bar charts for the two
+composite scores across all compared systems.
 
 Generated files are written below:
 
@@ -110,11 +111,11 @@ python -m venv .venv
 .venv/bin/pip install -r requirements.txt
 .venv/bin/python -m ipykernel install --user \
   --name sage-image-search-ndp \
-  --display-name "Sage image search (NRP)"
+  --display-name "Sage image search (NDP)"
 ```
 
-Set `HF_TOKEN` in `.env` when downloading datasets or building the optional
-edge_v1 image index. The two NPZ exports are versioned through Git LFS;
+Set `HF_TOKEN` in `.env` when downloading datasets. The two NPZ exports are
+versioned through Git LFS;
 downloaded benchmark data, extracted images, model caches, generated SQLite
 files, and newly generated result files under `data/` remain ignored.
 

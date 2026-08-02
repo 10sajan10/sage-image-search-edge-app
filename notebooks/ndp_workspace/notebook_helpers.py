@@ -269,8 +269,8 @@ def save_portable_index(index: PortableIndex, path: Path) -> None:
         path,
         metadata=_metadata_bytes(index),
         image_vectors=index.image_vectors.astype(np.float32, copy=False),
-        # Empty for an image-only index such as edge_v1; populated by
-        # build_index(embed_captions=True).
+        # Empty for an image-only index such as edge_v1; populated in a
+        # dual-vector export such as edge_v2.
         caption_vectors=(
             index.caption_vectors.astype(np.float32, copy=False)
             if index.caption_vectors is not None
@@ -427,7 +427,7 @@ def load_sqlite_vector_database(path: Path) -> PortableIndex:
 
 
 class TextImageEncoder:
-    """Use OpenCLIP for MobileCLIP2 and Transformers for the edge_v1 DFN model."""
+    """Load the DFN5B-CLIP query encoder recorded in the restored index."""
 
     def __init__(self, model_id: str, device: str = "auto", token: str | None = None):
         import torch
@@ -441,22 +441,10 @@ class TextImageEncoder:
         )
         model_path = snapshot_download(repo_id=model_id, token=token or None)
 
-        if "MobileCLIP" in model_id:
-            import open_clip
+        from transformers import AutoProcessor, CLIPModel
 
-            self.kind = "open_clip"
-            self.model, _, self.preprocess = open_clip.create_model_and_transforms(
-                f"hf-hub:{model_id}"
-            )
-            self.tokenizer = open_clip.get_tokenizer(f"hf-hub:{model_id}")
-        else:
-            from transformers import AutoProcessor, CLIPModel
-
-            self.kind = "transformers"
-            self.processor = AutoProcessor.from_pretrained(model_path, token=token or None)
-            self.model = CLIPModel.from_pretrained(model_path, token=token or None)
-            self.preprocess = None
-            self.tokenizer = None
+        self.processor = AutoProcessor.from_pretrained(model_path, token=token or None)
+        self.model = CLIPModel.from_pretrained(model_path, token=token or None)
         self.model = self.model.eval().to(self.device)
         print(f"Loaded {model_id} on {self.device}")
 
@@ -469,87 +457,19 @@ class TextImageEncoder:
         for start in range(0, len(texts), batch_size):
             batch = list(texts[start:start + batch_size])
             with self.torch.inference_mode():
-                if self.kind == "open_clip":
-                    tokens = self.tokenizer(batch).to(self.device)
-                    features = self.model.encode_text(tokens)
-                else:
-                    inputs = self.processor(
-                        text=batch,
-                        padding=True,
-                        truncation=True,
-                        return_tensors="pt",
-                    )
-                    inputs = {key: value.to(self.device) for key, value in inputs.items()}
-                    features = self.model.get_text_features(**inputs)
-                    # transformers 5 returns BaseModelOutputWithPooling here;
-                    # transformers 4 returned the projected tensor directly.
-                    features = getattr(features, "pooler_output", features)
+                inputs = self.processor(
+                    text=batch,
+                    padding=True,
+                    truncation=True,
+                    return_tensors="pt",
+                )
+                inputs = {key: value.to(self.device) for key, value in inputs.items()}
+                features = self.model.get_text_features(**inputs)
+                # transformers 5 returns BaseModelOutputWithPooling here;
+                # transformers 4 returned the projected tensor directly.
+                features = getattr(features, "pooler_output", features)
             chunks.append(self._normalize(features))
         return np.concatenate(chunks, axis=0).astype(np.float32, copy=False)
-
-    def encode_images(self, paths: Sequence[Path], batch_size: int = 64) -> np.ndarray:
-        from PIL import Image
-
-        chunks = []
-        for start in range(0, len(paths), batch_size):
-            batch_paths = paths[start:start + batch_size]
-            images = []
-            for path in batch_paths:
-                with Image.open(path) as image:
-                    images.append(image.convert("RGB").copy())
-            with self.torch.inference_mode():
-                if self.kind == "open_clip":
-                    pixels = self.torch.stack([self.preprocess(image) for image in images])
-                    features = self.model.encode_image(pixels.to(self.device))
-                else:
-                    inputs = self.processor(images=images, return_tensors="pt")
-                    pixels = inputs["pixel_values"].to(self.device)
-                    features = self.model.get_image_features(pixel_values=pixels)
-                    features = getattr(features, "pooler_output", features)
-            chunks.append(self._normalize(features))
-            done = min(start + batch_size, len(paths))
-            if done % (batch_size * 10) == 0 or done == len(paths):
-                print(f"Embedded images: {done:,}/{len(paths):,}")
-        return np.concatenate(chunks, axis=0).astype(np.float32, copy=False)
-
-
-def build_index(
-    records: list[CaptionRecord],
-    image_root: Path,
-    output: Path,
-    model_id: str,
-    device: str,
-    batch_size: int,
-    token: str | None = None,
-    embed_captions: bool = False,
-) -> PortableIndex:
-    """Embed benchmark images, and optionally the captions too.
-
-    `embed_captions=False` reproduces edge_v1: captions stay text and are
-    searched by BM25. Set it True for an edge_v2-style index that also wants a
-    dense caption leg; the caption vectors then come from the same encoder, so
-    they share the image vectors' dimensionality and query encoder.
-    """
-    encoder = TextImageEncoder(model_id, device=device, token=token)
-    image_vectors = encoder.encode_images(
-        [image_root / record.image_path for record in records],
-        batch_size=batch_size,
-    )
-    caption_vectors = None
-    if embed_captions:
-        caption_vectors = encoder.encode_texts(
-            [record.caption for record in records], batch_size=batch_size
-        )
-    index = PortableIndex(
-        model_id=model_id,
-        records=records,
-        image_vectors=image_vectors,
-        caption_vectors=caption_vectors,
-        source=model_id.rsplit("/", 1)[-1],
-    )
-    save_portable_index(index, output)
-    return index
-
 
 def _relative_score(values: np.ndarray) -> np.ndarray:
     low = float(values.min())
@@ -637,8 +557,8 @@ def resolve_weights(
         raise ValueError(
             f"caption_weight={caption_weight} was requested, but the "
             f"{index.source!r} index has no caption vectors. edge_v1 searches "
-            "captions with BM25 only. For a dense caption leg, rebuild with "
-            "build_index(..., embed_captions=True)."
+            "captions with BM25 only. A dense caption leg requires an index "
+            "export that already contains caption vectors."
         )
     return weights / weights.sum()
 
@@ -945,6 +865,51 @@ def benchmark_table(rows: Sequence[dict[str, Any]], benchmark: str):
         "MRR", "Success@25", "Diversity@25", "Primary score",
         "Primary + diversity score",
     ]]
+
+
+def score_bar_charts(
+    rows: Sequence[dict[str, Any]], benchmark: str | None = None
+):
+    """Plot Primary and Primary + Diversity scores side by side for all systems."""
+    import matplotlib.pyplot as plt
+
+    frame = overall_table(rows) if benchmark is None else benchmark_table(rows, benchmark)
+    frame = frame.sort_values(
+        ["Primary score", "system_version"], ascending=[False, True]
+    ).reset_index(drop=True)
+    labels = [
+        str(value).split(" (generated;", 1)[0]
+        for value in frame["system_version"]
+    ]
+    colors = [
+        "#f28e2b" if label.startswith("edge_") else "#4e79a7"
+        for label in labels
+    ]
+    positions = np.arange(len(frame))
+    figure, axes = plt.subplots(
+        1, 2, figsize=(14, max(4.0, 0.65 * len(frame))), sharey=True
+    )
+    title_prefix = benchmark or "Overall"
+    for axis, column, title in (
+        (axes[0], "Primary score", "Primary (50% MRR, 50% Success@25)"),
+        (
+            axes[1],
+            "Primary + diversity score",
+            "Primary + Diversity (equal thirds)",
+        ),
+    ):
+        values = frame[column].to_numpy(dtype=float)
+        bars = axis.barh(positions, values, color=colors)
+        axis.set_yticks(positions, labels)
+        axis.invert_yaxis()
+        axis.set_xlim(0, 1)
+        axis.set_xlabel("Composite score")
+        axis.set_title(f"{title_prefix}\n{title}")
+        axis.grid(axis="x", alpha=0.25)
+        axis.bar_label(bars, labels=[f"{value:.3f}" for value in values], padding=3)
+    figure.tight_layout()
+    plt.show()
+    return figure, axes
 
 
 def query_result_table(rows: Sequence[dict[str, Any]], benchmark: str):
