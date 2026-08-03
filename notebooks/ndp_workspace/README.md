@@ -96,6 +96,13 @@ Diversity@25, the two-metric primary score, and the primary-plus-diversity
 score. Every summary table is followed by side-by-side bar charts for the two
 composite scores across all compared systems.
 
+Immediately after the overall comparison, the notebook sweeps Edge v1 alpha
+from `0.00` through `1.00` in `0.05` increments. Alpha is the image-vector
+weight and `1 - alpha` is the caption-BM25 weight. It displays every overall
+score, saves `data/generated_benchmarks/edge_v1_alpha_sweep_overall.csv`, and
+draws separate Primary and Primary-plus-diversity graphs with the best alpha
+and the original `0.75` setting marked.
+
 Generated files are written below:
 
 ```text

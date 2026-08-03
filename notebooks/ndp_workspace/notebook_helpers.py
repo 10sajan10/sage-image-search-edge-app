@@ -994,6 +994,131 @@ def evaluate_benchmarks(
     return summary, all_query_rows
 
 
+def evaluate_edge_v1_alpha_sweep(
+    index: PortableIndex,
+    encoder: TextImageEncoder,
+    dataset_root: Path,
+    alphas: Sequence[float],
+    top_k: int = 25,
+    batch_size: int = 64,
+):
+    """Evaluate Edge v1 overall metrics as alpha moves from BM25 to image search.
+
+    ``alpha`` is the image-vector weight and ``1 - alpha`` is the caption-BM25
+    weight. Query embeddings, BM25 scores, and each leg's top-K candidates are
+    computed once and reused for every alpha.
+    """
+    import pandas as pd
+    from rank_bm25 import BM25Okapi
+
+    if encoder.model_id != index.model_id:
+        raise ValueError("The alpha-sweep encoder does not match the index")
+    if index.has_caption_vectors:
+        raise ValueError("The Edge v1 alpha sweep expects an image-only dense index")
+    alpha_values = sorted({float(alpha) for alpha in alphas})
+    if not alpha_values or any(alpha < 0 or alpha > 1 for alpha in alpha_values):
+        raise ValueError("Alpha values must be between 0 and 1 inclusive")
+
+    per_alpha: dict[float, list[dict[str, float]]] = {
+        alpha: [] for alpha in alpha_values
+    }
+    tokenize = lambda value: re.findall(r"[a-z0-9]+", value.lower())
+    for dataset, benchmark_name in BENCHMARK_NAMES.items():
+        positions = np.asarray(
+            [i for i, record in enumerate(index.records) if record.dataset == dataset],
+            dtype=np.int64,
+        )
+        records = [index.records[int(position)] for position in positions]
+        image_vectors = index.image_vectors[positions]
+        queries = load_ground_truth(dataset_root, dataset)
+        query_vectors = encoder.encode_texts(
+            [query.text for query in queries], batch_size=batch_size
+        )
+        bm25 = BM25Okapi([tokenize(record.caption) for record in records])
+        count = min(top_k, len(records))
+        metrics = {
+            alpha: {"rr": [], "hit": [], "diversity": []}
+            for alpha in alpha_values
+        }
+        for query, query_vector in zip(queries, query_vectors):
+            image_scores = _relative_score(image_vectors @ query_vector)
+            bm25_scores = _relative_score(np.asarray(
+                bm25.get_scores(tokenize(query.text)), dtype=np.float32
+            ))
+            image_candidates = np.argpartition(image_scores, -count)[-count:]
+            bm25_candidates = np.argpartition(bm25_scores, -count)[-count:]
+            normalized_image = np.zeros(len(records), dtype=np.float64)
+            normalized_bm25 = np.zeros(len(records), dtype=np.float64)
+            normalized_image[image_candidates] = _relative_score(
+                image_scores[image_candidates]
+            )
+            normalized_bm25[bm25_candidates] = _relative_score(
+                bm25_scores[bm25_candidates]
+            )
+            for alpha in alpha_values:
+                active = []
+                if alpha > 0:
+                    active.append(image_candidates)
+                if alpha < 1:
+                    active.append(bm25_candidates)
+                candidates = np.unique(np.concatenate(active))
+                fused = (
+                    alpha * normalized_image[candidates]
+                    + (1.0 - alpha) * normalized_bm25[candidates]
+                )
+                ordered = candidates[np.argsort(fused, kind="stable")[::-1]][:count]
+                ranked_ids = [records[int(position)].image_id for position in ordered]
+                first_hit = next(
+                    (
+                        rank
+                        for rank, image_id in enumerate(ranked_ids, 1)
+                        if image_id in query.relevant
+                    ),
+                    None,
+                )
+                ranked_vectors = image_vectors[ordered].astype(np.float64, copy=False)
+                if len(ranked_vectors) > 1:
+                    norms = np.linalg.norm(ranked_vectors, axis=1, keepdims=True)
+                    ranked_vectors = ranked_vectors / np.maximum(norms, 1e-12)
+                    similarities = ranked_vectors @ ranked_vectors.T
+                    upper = np.triu_indices(len(ranked_vectors), k=1)
+                    diversity = 1.0 - float(np.mean(similarities[upper]))
+                else:
+                    diversity = 0.0
+                metrics[alpha]["rr"].append(1.0 / first_hit if first_hit else 0.0)
+                metrics[alpha]["hit"].append(float(first_hit is not None))
+                metrics[alpha]["diversity"].append(diversity)
+
+        for alpha in alpha_values:
+            per_alpha[alpha].append({
+                "MRR": float(np.mean(metrics[alpha]["rr"])),
+                f"Success@{top_k}": float(np.mean(metrics[alpha]["hit"])),
+                f"Diversity@{top_k}": float(np.mean(metrics[alpha]["diversity"])),
+            })
+        print(f"Alpha sweep prepared {benchmark_name}")
+
+    rows = []
+    for alpha in alpha_values:
+        mrr = float(np.mean([row["MRR"] for row in per_alpha[alpha]]))
+        success = float(np.mean([
+            row[f"Success@{top_k}"] for row in per_alpha[alpha]
+        ]))
+        diversity = float(np.mean([
+            row[f"Diversity@{top_k}"] for row in per_alpha[alpha]
+        ]))
+        rows.append({
+            "alpha": alpha,
+            "image_weight": alpha,
+            "bm25_weight": 1.0 - alpha,
+            "MRR": mrr,
+            f"Success@{top_k}": success,
+            f"Diversity@{top_k}": diversity,
+            "Primary score": (mrr + success) / 2.0,
+            "Primary + diversity score": (mrr + success + diversity) / 3.0,
+        })
+    return pd.DataFrame(rows)
+
+
 def load_reference_results(
     root: Path,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
