@@ -9,14 +9,13 @@ import json
 import math
 import os
 import re
-import sqlite3
 import urllib.request
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Any, Iterable, Sequence
+from typing import Any
 
 import numpy as np
-
 
 DATASETS = {
     "cloudbench": {
@@ -120,6 +119,18 @@ class PortableIndex:
                 raise ValueError("caption_vectors and records have different lengths")
             if self.caption_vectors.shape[1] != self.image_vectors.shape[1]:
                 raise ValueError("image and caption vector dimensions differ")
+
+
+@dataclass
+class MilvusVectorDatabase:
+    """A local Milvus Lite file and its searchable collection."""
+
+    path: Path
+    collection_name: str
+    model_id: str
+    source: str
+    record_count: int
+    has_caption_vectors: bool
 
 
 @dataclass
@@ -406,115 +417,113 @@ def load_portable_index(path: Path) -> PortableIndex:
     return index
 
 
-def save_sqlite_vector_database(index: PortableIndex, path: Path) -> None:
-    """Persist the portable index in an embedded SQLite database (no server)."""
+def ensure_milvus_vector_database(
+    index: PortableIndex,
+    path: Path,
+    collection_name: str = "images",
+    batch_size: int = 512,
+) -> MilvusVectorDatabase:
+    """Create or reuse a file-backed Milvus Lite collection with native BM25."""
+    from pymilvus import DataType, Function, FunctionType, MilvusClient
+
     index.validate()
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    if temporary.exists():
-        temporary.unlink()
-    connection = sqlite3.connect(temporary)
-    try:
-        connection.executescript("""
-            PRAGMA journal_mode=OFF;
-            PRAGMA synchronous=OFF;
-            CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-            CREATE TABLE images (
-                position INTEGER PRIMARY KEY,
-                dataset TEXT NOT NULL,
-                image_id TEXT NOT NULL,
-                caption TEXT NOT NULL,
-                image_path TEXT NOT NULL,
-                image_vector BLOB NOT NULL,
-                -- NULL for an image-only index such as edge_v1.
-                caption_vector BLOB
-            );
-            CREATE UNIQUE INDEX images_dataset_id ON images(dataset, image_id);
-            CREATE INDEX images_dataset ON images(dataset);
-        """)
-        metadata = {
-            "format_version": str(PORTABLE_INDEX_VERSION),
-            "model_id": index.model_id,
-            "source": index.source,
-            "vector_dtype": "float32",
-            "image_dimension": str(index.image_vectors.shape[1]),
-            "caption_dimension": str(
-                index.caption_vectors.shape[1] if index.caption_vectors is not None else 0
-            ),
-            "record_count": str(len(index.records)),
-        }
-        connection.executemany(
-            "INSERT INTO metadata(key, value) VALUES (?, ?)", metadata.items()
+    client = MilvusClient(str(path))
+    expected = {
+        "model_id": index.model_id,
+        "source": index.source,
+        "record_count": len(index.records),
+        "has_caption_vectors": index.has_caption_vectors,
+    }
+    if client.has_collection(collection_name):
+        client.load_collection(collection_name)
+        rows = client.query(
+            collection_name,
+            filter="position == 0",
+            output_fields=["model_id", "source", "has_caption_vector"],
+            limit=1,
         )
-        def database_rows():
-            for position, record in enumerate(index.records):
-                caption_blob = (
-                    index.caption_vectors[position].astype(np.float32, copy=False).tobytes()
-                    if index.caption_vectors is not None
-                    else None
-                )
-                yield (
-                    position,
-                    record.dataset,
-                    record.image_id,
-                    record.caption,
-                    record.image_path,
-                    index.image_vectors[position].astype(np.float32, copy=False).tobytes(),
-                    caption_blob,
-                )
-        connection.executemany(
-            """INSERT INTO images(
-                position, dataset, image_id, caption, image_path,
-                image_vector, caption_vector
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            database_rows(),
+        count = int(client.get_collection_stats(collection_name)["row_count"])
+        reusable = bool(rows) and {
+            "model_id": rows[0]["model_id"],
+            "source": rows[0]["source"],
+            "record_count": count,
+            "has_caption_vectors": bool(rows[0]["has_caption_vector"]),
+        } == expected
+        if reusable:
+            client.close()
+            print(f"Reusing {count:,} records from Milvus Lite database {path}")
+            return MilvusVectorDatabase(path, collection_name, **expected)
+        client.drop_collection(collection_name)
+
+    dimension = int(index.image_vectors.shape[1])
+    schema = client.create_schema(auto_id=False, enable_dynamic_field=False)
+    schema.add_field("position", DataType.INT64, is_primary=True)
+    schema.add_field("dataset", DataType.VARCHAR, max_length=64)
+    schema.add_field("image_id", DataType.VARCHAR, max_length=2048)
+    schema.add_field(
+        "caption", DataType.VARCHAR, max_length=65535, enable_analyzer=True
+    )
+    schema.add_field("image_path", DataType.VARCHAR, max_length=4096)
+    schema.add_field("model_id", DataType.VARCHAR, max_length=512)
+    schema.add_field("source", DataType.VARCHAR, max_length=64)
+    schema.add_field("has_caption_vector", DataType.BOOL)
+    schema.add_field("image_vector", DataType.FLOAT_VECTOR, dim=dimension)
+    if index.has_caption_vectors:
+        schema.add_field("caption_vector", DataType.FLOAT_VECTOR, dim=dimension)
+    schema.add_field("caption_bm25", DataType.SPARSE_FLOAT_VECTOR)
+    schema.add_function(Function(
+        name="caption_bm25_function",
+        input_field_names=["caption"],
+        output_field_names=["caption_bm25"],
+        function_type=FunctionType.BM25,
+    ))
+
+    index_params = client.prepare_index_params()
+    index_params.add_index("image_vector", index_type="FLAT", metric_type="IP")
+    if index.has_caption_vectors:
+        index_params.add_index("caption_vector", index_type="FLAT", metric_type="IP")
+    index_params.add_index(
+        "caption_bm25",
+        index_type="SPARSE_INVERTED_INDEX",
+        metric_type="BM25",
+    )
+    client.create_collection(
+        collection_name,
+        schema=schema,
+        index_params=index_params,
+        consistency_level="Strong",
+    )
+    for start in range(0, len(index.records), batch_size):
+        rows = []
+        for position in range(start, min(start + batch_size, len(index.records))):
+            record = index.records[position]
+            row = {
+                "position": position,
+                "dataset": record.dataset,
+                "image_id": record.image_id,
+                "caption": record.caption,
+                "image_path": record.image_path,
+                "model_id": index.model_id,
+                "source": index.source,
+                "has_caption_vector": index.has_caption_vectors,
+                "image_vector": index.image_vectors[position].tolist(),
+            }
+            if index.has_caption_vectors:
+                row["caption_vector"] = index.caption_vectors[position].tolist()
+            rows.append(row)
+        client.insert(collection_name, rows)
+        print(
+            f"\r{index.source}: populated {min(start + batch_size, len(index.records)):,}"
+            f"/{len(index.records):,} Milvus records",
+            end="",
+            flush=True,
         )
-        connection.commit()
-    finally:
-        connection.close()
-    temporary.replace(path)
-    print(f"Saved {len(index.records):,} records to SQLite database {path}")
-
-
-def load_sqlite_vector_database(path: Path) -> PortableIndex:
-    """Load an embedded SQLite vector database into the exact-search engine."""
-    if not path.is_file():
-        raise FileNotFoundError(f"SQLite vector database not found: {path}")
-    connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
-    try:
-        metadata = dict(connection.execute("SELECT key, value FROM metadata"))
-        rows = connection.execute(
-            """SELECT dataset, image_id, caption, image_path,
-                      image_vector, caption_vector
-               FROM images ORDER BY position"""
-        ).fetchall()
-    finally:
-        connection.close()
-    image_dimension = int(metadata["image_dimension"])
-    caption_dimension = int(metadata.get("caption_dimension", 0))
-    records = [CaptionRecord(*row[:4]) for row in rows]
-    image_vectors = np.stack([
-        np.frombuffer(row[4], dtype=np.float32, count=image_dimension).copy()
-        for row in rows
-    ])
-    caption_vectors = (
-        np.stack([
-            np.frombuffer(row[5], dtype=np.float32, count=caption_dimension).copy()
-            for row in rows
-        ])
-        if caption_dimension
-        else None
-    )
-    index = PortableIndex(
-        model_id=metadata["model_id"],
-        records=records,
-        image_vectors=image_vectors,
-        caption_vectors=caption_vectors,
-        source=metadata.get("source", "sqlite"),
-    )
-    index.validate()
-    print(f"Loaded {len(records):,} records from SQLite database {path}")
-    return index
+    print()
+    client.flush(collection_name)
+    client.close()
+    print(f"Saved {len(index.records):,} records to Milvus Lite database {path}")
+    return MilvusVectorDatabase(path, collection_name, **expected)
 
 
 class TextImageEncoder:
@@ -709,6 +718,101 @@ def search_index(
         }
         for rank, position in enumerate(ordered, 1)
     ]
+
+
+def search_milvus_database(
+    database: MilvusVectorDatabase,
+    encoder: TextImageEncoder,
+    query: str,
+    top_k: int = 25,
+    image_weight: float = 0.40,
+    caption_weight: float = 0.0,
+    bm25_weight: float = 0.60,
+) -> list[dict[str, Any]]:
+    """Search dense vectors and Milvus-native BM25, then fuse their candidates."""
+    from pymilvus import MilvusClient
+
+    if encoder.model_id != database.model_id:
+        raise ValueError(
+            f"Database uses {database.model_id}, but query encoder is {encoder.model_id}"
+        )
+    weights = np.asarray(
+        [image_weight, caption_weight, bm25_weight], dtype=np.float64
+    )
+    if np.any(weights < 0) or not weights.sum():
+        raise ValueError("Weights must be non-negative and not all zero")
+    if caption_weight > 0 and not database.has_caption_vectors:
+        raise ValueError(
+            f"caption_weight={caption_weight} was requested, but "
+            f"{database.source!r} has no caption vectors"
+        )
+    weights /= weights.sum()
+
+    query_vector = encoder.encode_texts([query])[0].tolist()
+    output_fields = ["dataset", "image_id", "caption", "image_path"]
+    client = MilvusClient(str(database.path))
+    try:
+        client.load_collection(database.collection_name)
+        searches = [
+            ("image_vector", [query_vector], float(weights[0])),
+            ("caption_vector", [query_vector], float(weights[1])),
+            ("caption_bm25", [query], float(weights[2])),
+        ]
+        leg_hits: list[list[dict[str, Any]]] = []
+        entities: dict[int, dict[str, Any]] = {}
+        for field, data, weight in searches:
+            if not weight or (field == "caption_vector" and not database.has_caption_vectors):
+                leg_hits.append([])
+                continue
+            hits = list(client.search(
+                collection_name=database.collection_name,
+                data=data,
+                anns_field=field,
+                limit=min(top_k, database.record_count),
+                output_fields=output_fields,
+            )[0])
+            leg_hits.append(hits)
+            for hit in hits:
+                entities[int(hit["position"])] = dict(hit["entity"])
+    finally:
+        client.close()
+
+    raw_by_leg: list[dict[int, float]] = []
+    contribution_by_leg: list[dict[int, float]] = []
+    for hits, weight in zip(leg_hits, weights):
+        raw = {int(hit["position"]): float(hit["distance"]) for hit in hits}
+        raw_by_leg.append(raw)
+        if not raw or weight <= 0:
+            contribution_by_leg.append({})
+            continue
+        positions = list(raw)
+        values = np.asarray([raw[position] for position in positions], dtype=np.float64)
+        normalized = _relative_score(values)
+        contribution_by_leg.append({
+            position: float(weight * score)
+            for position, score in zip(positions, normalized)
+        })
+
+    fused = {
+        position: sum(leg.get(position, 0.0) for leg in contribution_by_leg)
+        for position in entities
+    }
+    ordered = sorted(fused, key=lambda position: (-fused[position], position))[:top_k]
+    results = []
+    for rank, position in enumerate(ordered, 1):
+        entity = entities[position]
+        results.append({
+            "rank": rank,
+            "score": fused[position],
+            "image_score": contribution_by_leg[0].get(position, 0.0),
+            "caption_score": contribution_by_leg[1].get(position, 0.0),
+            "bm25_score": contribution_by_leg[2].get(position, 0.0),
+            "image_similarity": raw_by_leg[0].get(position, 0.0),
+            "caption_similarity": raw_by_leg[1].get(position, 0.0),
+            "bm25_raw": raw_by_leg[2].get(position, 0.0),
+            **entity,
+        })
+    return results
 
 
 def load_ground_truth(dataset_root: Path, dataset: str) -> list[BenchmarkQuery]:
@@ -1041,8 +1145,56 @@ def overall_table(rows: Sequence[dict[str, Any]]):
     return overall
 
 
-def show_results(results: Sequence[dict[str, Any]], image_root: Path, width: int = 220) -> None:
+def load_result_images(
+    results: Sequence[dict[str, Any]],
+    dataset_root: Path,
+) -> dict[tuple[str, str], bytes]:
+    """Read only result images from their Parquet row groups, without extraction."""
+    import pyarrow.parquet as pq
+
+    wanted: dict[str, set[str]] = {}
+    for row in results:
+        wanted.setdefault(str(row["dataset"]), set()).add(str(row["image_id"]))
+    found: dict[tuple[str, str], bytes] = {}
+    for dataset, pending in wanted.items():
+        id_column = str(DATASETS[dataset]["id_column"])
+        shards = sorted((dataset_root / dataset / "data").glob("*.parquet"))
+        for shard in shards:
+            parquet = pq.ParquetFile(shard)
+            for row_group in range(parquet.metadata.num_row_groups):
+                ids = parquet.read_row_group(
+                    row_group, columns=[id_column]
+                ).column(id_column).to_pylist()
+                matches = {
+                    str(image_id): position
+                    for position, image_id in enumerate(ids)
+                    if str(image_id) in pending
+                }
+                if not matches:
+                    continue
+                images = parquet.read_row_group(
+                    row_group, columns=["image"]
+                ).column("image").to_pylist()
+                for image_id, position in matches.items():
+                    found[(dataset, image_id)] = _image_bytes(images[position], shard)
+                    pending.remove(image_id)
+                if not pending:
+                    break
+            if not pending:
+                break
+        if pending:
+            print(f"Warning: {len(pending)} result images were not found in {dataset}")
+    print(f"Loaded {len(found):,} requested images directly from Parquet")
+    return found
+
+
+def show_results(
+    results: Sequence[dict[str, Any]],
+    images: dict[tuple[str, str], bytes],
+    width: int = 220,
+) -> None:
     import html
+
     from IPython.display import HTML, display
 
     cards = []
@@ -1050,13 +1202,14 @@ def show_results(results: Sequence[dict[str, Any]], image_root: Path, width: int
     # edge_v1 card does not imply a leg the index does not have.
     show_caption_leg = any(row.get("caption_score", 0.0) for row in results)
     for row in results:
-        image_path = image_root / row["image_path"]
-        if image_path.is_file():
+        image_bytes = images.get((str(row["dataset"]), str(row["image_id"])))
+        if image_bytes is not None:
             import base64
+
             from PIL import Image
 
             buffer = io.BytesIO()
-            with Image.open(image_path) as image:
+            with Image.open(io.BytesIO(image_bytes)) as image:
                 image.thumbnail((width * 2, 440))
                 image.convert("RGB").save(buffer, format="JPEG", quality=82)
             source = f"data:image/jpeg;base64,{base64.b64encode(buffer.getvalue()).decode()}"

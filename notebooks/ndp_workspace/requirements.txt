@@ -4,6 +4,7 @@ matplotlib>=3.8,<4
 numpy>=1.26,<3
 pandas>=2.2,<4
 pillow>=10,<13
+pymilvus[milvus-lite]>=2.6.17,<2.7
 pyarrow>=18,<24
 python-dotenv>=1,<2
 rank-bm25>=0.2.2,<0.3

@@ -2,9 +2,9 @@
 
 This directory is a standalone Jupyter workflow for all five Sage image-search
 benchmarks. It optionally downloads the pinned Hugging Face datasets,
-materializes their images, restores edge_v1 and edge_v2 vector exports into
-embedded SQLite files, generates fresh benchmark comparisons, and runs the
-same custom query against both versions with 25 rendered results each.
+restores edge_v1 and edge_v2 vector exports into embedded Milvus Lite files,
+generates fresh benchmark comparisons, and runs the same custom query against
+both versions with 25 lazily loaded results each.
 
 ## Models and retrieval
 
@@ -52,8 +52,8 @@ For direct inspection without loading NumPy, the exact Edge v2 caption text
 and image paths are also tracked in
 `assets/ollama_gemma4_e2b_edge_v2_benchmark_captions.jsonl`.
 
-`PortableIndex.caption_vectors`, the NPZ `caption_vectors` entry, and SQLite's
-`caption_vector` column persist the dense caption leg. Requesting a positive
+`PortableIndex.caption_vectors`, the NPZ `caption_vectors` entry, and Milvus's
+`caption_vector` field persist the dense caption leg. Requesting a positive
 caption weight against an index without that leg raises an error rather than
 silently changing the configured fusion.
 
@@ -65,16 +65,22 @@ The notebook asks the user to:
 - confirm the path to the exported edge_v1 NPZ;
 - confirm the path to the exported edge_v2 NPZ.
 
-The two portable indexes are copied into separate serverless SQLite files:
+The two portable indexes are copied into separate embedded Milvus Lite files:
 
 ```text
-data/vector_database/edge_v1_benchmarks.sqlite3
-data/vector_database/edge_v2_benchmarks.sqlite3
+data/vector_database/edge_v1_benchmarks.milvus.db
+data/vector_database/edge_v2_benchmarks.milvus.db
 ```
 
 Each file stores dataset, image ID, caption, relative image path, image vector,
-optional caption vector, and the embedding model ID. SQLite runs directly in
-Python; no database container is required by the NDP notebook.
+optional caption vector, and the embedding model ID. Milvus generates a sparse
+BM25 field from every caption and searches it natively. Milvus Lite runs in the
+Python process; no database container is required by the NDP notebook.
+
+Benchmark metrics retain the historical exact fusion implementation so their
+values stay comparable with the bundled runs. The interactive demo searches
+the Milvus dense fields and built-in BM25 index. Milvus's analyzer can produce
+slightly different lexical scores from the historical `rank-bm25` package.
 
 The original edge_v1 population missed 35 CloudBench images after caption
 requests timed out. They were later regenerated with the original Gemma 3
@@ -120,7 +126,7 @@ python -m venv .venv
 
 Set `HF_TOKEN` in `.env` when downloading datasets. The two NPZ exports are
 versioned through Git LFS but are resolved automatically by the notebook;
-downloaded benchmark data, extracted images, model caches, generated SQLite
+downloaded benchmark data, model caches, generated Milvus
 files, and newly generated result files under `data/` remain ignored.
 
 The five pinned benchmark datasets are intentionally not committed to this
@@ -130,7 +136,10 @@ every lab checkout unnecessarily large. For a classroom deployment, publish
 the downloaded `data/benchmarking/datasets` directory as one NDP catalog asset
 and mount or copy it to that same path before opening the notebook. Users can
 then answer `no` to the notebook's download prompt; it reuses those Parquet
-files and still performs image extraction.
+files. The notebook never extracts all 32,177 images: benchmark cells read only
+scalar label columns, and the custom-query cell reads only result images from
+the necessary Parquet row groups. In a local timing check, loading one result
+image took about 0.23 seconds; actual batches vary with shard layout and disk.
 
 The final cell prompts once, runs the query against both versions, and displays
 the fused score, weighted leg contributions, raw similarities, caption, image,
