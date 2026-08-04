@@ -1,12 +1,16 @@
 huggingface-hub>=0.34,<2
+einops>=0.8,<1
 ipykernel>=6,<8
+ipywidgets>=8,<9
 matplotlib>=3.8,<4
 numpy>=1.26,<3
 pandas>=2.2,<4
 pillow>=10,<13
+peft>=0.17,<1
 pymilvus[milvus-lite]>=2.6.17,<2.7
 pyarrow>=18,<24
 python-dotenv>=1,<2
 rank-bm25>=0.2.2,<0.3
 torch>=2.3
-transformers>=4.53,<6
+timm>=1,<2
+transformers==4.53.3

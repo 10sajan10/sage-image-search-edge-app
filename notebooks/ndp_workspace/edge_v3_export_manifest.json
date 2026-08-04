@@ -1,0 +1,26 @@
+{
+  "file_name": "edge_v3_benchmarks.npz",
+  "format_version": 1,
+  "source": "edge_v3",
+  "model_id": "jinaai/jina-clip-v2",
+  "query_task": "retrieval.query",
+  "record_count": 32177,
+  "vector_dimension": 1024,
+  "contains": [
+    "caption_text",
+    "image_vector",
+    "caption_vector",
+    "dataset",
+    "image_id",
+    "relative_image_path"
+  ],
+  "dataset_counts": {
+    "cloudbench": 2853,
+    "commonobjectsbench": 5953,
+    "firebench": 2169,
+    "inquire-small": 19280,
+    "sagebench": 1922
+  },
+  "size_bytes": 321642369,
+  "sha256": "dd83baf654b43c382c9d66d6f2e7dfe87029ff49b2ffe6c58b6a895e3b1eae1c"
+}

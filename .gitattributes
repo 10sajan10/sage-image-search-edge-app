@@ -1,2 +1,3 @@
 notebooks/ndp_workspace/data/edge_v1_benchmarks.npz filter=lfs diff=lfs merge=lfs -text
 notebooks/ndp_workspace/data/edge_v2_benchmarks.npz filter=lfs diff=lfs merge=lfs -text
+notebooks/ndp_workspace/data/edge_v3_benchmarks.npz filter=lfs diff=lfs merge=lfs -text

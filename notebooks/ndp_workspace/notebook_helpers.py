@@ -72,7 +72,14 @@ PORTABLE_INDEX_DOWNLOAD_BASE = (
 PORTABLE_INDEX_FILENAMES = {
     "edge_v1_benchmarks.npz",
     "edge_v2_benchmarks.npz",
+    "edge_v3_benchmarks.npz",
 }
+
+MODEL_REVISIONS = {
+    "apple/DFN5B-CLIP-ViT-H-14-378": "01b771ed0d1395ca5ffdd279897d665ebe00dfd2",
+    "jinaai/jina-clip-v2": "e10d47f5691d0454a0fb5d13f46f2199b74cb436",
+}
+JINA_CODE_REVISION = "39e6a55ae971b59bea6e44675d237c99762e7ee2"
 
 
 @dataclass(frozen=True)
@@ -93,9 +100,10 @@ class PortableIndex:
     `caption_vectors` is None for edge_v1 and the caption leg is simply not
     used.
 
-    edge_v2 populates `caption_vectors`, so the leg stays first-class
-    throughout. Requesting a caption weight against an index
-    that has no caption vectors is an error rather than a silent reweighting --
+    edge_v2 and edge_v3 populate `caption_vectors`, so the leg stays first-class
+    throughout. Edge v3 also records Jina's `retrieval.query` task. Requesting
+    a caption weight against an index that has no caption vectors is an error
+    rather than a silent reweighting --
     silently dropping the leg would make two runs look comparable when their
     fusion differed.
     """
@@ -105,6 +113,7 @@ class PortableIndex:
     image_vectors: np.ndarray
     caption_vectors: np.ndarray | None = None
     source: str = "unknown"
+    query_task: str | None = None
 
     @property
     def has_caption_vectors(self) -> bool:
@@ -131,6 +140,7 @@ class MilvusVectorDatabase:
     source: str
     record_count: int
     has_caption_vectors: bool
+    query_task: str | None = None
 
 
 @dataclass
@@ -275,6 +285,7 @@ def _metadata_bytes(index: PortableIndex) -> np.ndarray:
         "format_version": PORTABLE_INDEX_VERSION,
         "model_id": index.model_id,
         "source": index.source,
+        "query_task": index.query_task,
         "records": [record.__dict__ for record in index.records],
     }
     return np.frombuffer(
@@ -291,7 +302,7 @@ def save_portable_index(index: PortableIndex, path: Path) -> None:
         metadata=_metadata_bytes(index),
         image_vectors=index.image_vectors.astype(np.float32, copy=False),
         # Empty for an image-only index such as edge_v1; populated in a
-        # dual-vector export such as edge_v2.
+        # dual-vector export such as edge_v2 or edge_v3.
         caption_vectors=(
             index.caption_vectors.astype(np.float32, copy=False)
             if index.caption_vectors is not None
@@ -403,6 +414,7 @@ def load_portable_index(path: Path) -> PortableIndex:
         index = PortableIndex(
             model_id=str(metadata["model_id"]),
             source=str(metadata.get("source", "unknown")),
+            query_task=metadata.get("query_task"),
             records=[CaptionRecord(**record) for record in metadata["records"]],
             image_vectors=np.asarray(archive["image_vectors"], dtype=np.float32),
             caption_vectors=(
@@ -410,9 +422,10 @@ def load_portable_index(path: Path) -> PortableIndex:
             ),
         )
     index.validate()
+    task_label = f", query_task={index.query_task}" if index.query_task else ""
     print(
         f"Loaded {len(index.records):,} records from {resolved_path}; "
-        f"model={index.model_id}, source={index.source}"
+        f"model={index.model_id}, source={index.source}{task_label}"
     )
     return index
 
@@ -434,6 +447,7 @@ def ensure_milvus_vector_database(
         "source": index.source,
         "record_count": len(index.records),
         "has_caption_vectors": index.has_caption_vectors,
+        "query_task": index.query_task,
     }
     if client.has_collection(collection_name):
         client.load_collection(collection_name)
@@ -449,7 +463,7 @@ def ensure_milvus_vector_database(
             "source": rows[0]["source"],
             "record_count": count,
             "has_caption_vectors": bool(rows[0]["has_caption_vector"]),
-        } == expected
+        } == {key: value for key, value in expected.items() if key != "query_task"}
         if reusable:
             client.close()
             print(f"Reusing {count:,} records from Milvus Lite database {path}")
@@ -527,32 +541,73 @@ def ensure_milvus_vector_database(
 
 
 class TextImageEncoder:
-    """Load the DFN5B-CLIP query encoder recorded in the restored index."""
+    """Load the model-specific text encoder recorded in a portable index."""
 
-    def __init__(self, model_id: str, device: str = "auto", token: str | None = None):
+    def __init__(
+        self,
+        model_id: str,
+        device: str = "auto",
+        token: str | None = None,
+        query_task: str | None = None,
+    ):
         import torch
         from huggingface_hub import snapshot_download
 
         self.torch = torch
         self.model_id = model_id
+        self.query_task = query_task
         self.device = (
             "cuda" if device == "auto" and torch.cuda.is_available() else
             "cpu" if device == "auto" else device
         )
-        model_path = snapshot_download(repo_id=model_id, token=token or None)
+        revision = MODEL_REVISIONS.get(model_id)
+        model_path = snapshot_download(
+            repo_id=model_id,
+            revision=revision,
+            token=token or None,
+        )
 
-        from transformers import AutoProcessor, CLIPModel
+        if model_id == "jinaai/jina-clip-v2":
+            from transformers import AutoModel
 
-        self.processor = AutoProcessor.from_pretrained(model_path, token=token or None)
-        self.model = CLIPModel.from_pretrained(model_path, token=token or None)
+            self.processor = None
+            self.model = AutoModel.from_pretrained(
+                model_path,
+                trust_remote_code=True,
+                code_revision=JINA_CODE_REVISION,
+                use_text_flash_attn=False,
+                use_vision_xformers=False,
+                token=token or None,
+            )
+        else:
+            from transformers import AutoProcessor, CLIPModel
+
+            self.processor = AutoProcessor.from_pretrained(
+                model_path,
+                token=token or None,
+                use_fast=False,
+            )
+            self.model = CLIPModel.from_pretrained(model_path, token=token or None)
         self.model = self.model.eval().to(self.device)
-        print(f"Loaded {model_id} on {self.device}")
+        task_label = f", query_task={query_task}" if query_task else ""
+        print(f"Loaded {model_id} on {self.device}{task_label}")
 
     def _normalize(self, tensor: Any) -> np.ndarray:
         tensor = tensor / tensor.norm(dim=-1, keepdim=True).clamp_min(1e-12)
         return tensor.float().cpu().numpy()
 
     def encode_texts(self, texts: Sequence[str], batch_size: int = 64) -> np.ndarray:
+        if self.model_id == "jinaai/jina-clip-v2":
+            with self.torch.inference_mode():
+                features = self.model.encode_text(
+                    list(texts),
+                    task=self.query_task,
+                    batch_size=batch_size,
+                    convert_to_numpy=True,
+                    truncate_dim=1024,
+                )
+            return np.asarray(features, dtype=np.float32)
+
         chunks = []
         for start in range(0, len(texts), batch_size):
             batch = list(texts[start:start + batch_size])
@@ -680,6 +735,11 @@ def search_index(
         raise ValueError(
             f"Index uses {index.model_id}, but query encoder is {encoder.model_id}"
         )
+    if encoder.query_task != index.query_task:
+        raise ValueError(
+            f"Index query task is {index.query_task!r}, but encoder task is "
+            f"{encoder.query_task!r}"
+        )
     weights = resolve_weights(index, image_weight, caption_weight, bm25_weight)
 
     query_vector = encoder.encode_texts([query])[0]
@@ -735,6 +795,11 @@ def search_milvus_database(
     if encoder.model_id != database.model_id:
         raise ValueError(
             f"Database uses {database.model_id}, but query encoder is {encoder.model_id}"
+        )
+    if encoder.query_task != database.query_task:
+        raise ValueError(
+            f"Database query task is {database.query_task!r}, but encoder task is "
+            f"{encoder.query_task!r}"
         )
     weights = np.asarray(
         [image_weight, caption_weight, bm25_weight], dtype=np.float64
@@ -932,6 +997,8 @@ def evaluate_benchmarks(
     """Generate a fresh benchmark run from the selected portable vector file."""
     if encoder.model_id != index.model_id:
         raise ValueError("The benchmark encoder does not match the portable index")
+    if encoder.query_task != index.query_task:
+        raise ValueError("The benchmark encoder query task does not match the portable index")
     output_root.mkdir(parents=True, exist_ok=True)
     summary: list[dict[str, Any]] = []
     all_query_rows: list[dict[str, Any]] = []

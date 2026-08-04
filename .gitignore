@@ -18,9 +18,10 @@ state/
 spool/
 /captured-image.jpg
 
-# Keep the two portable NDP indexes in Git LFS while continuing to ignore
+# Keep the three portable NDP indexes in Git LFS while continuing to ignore
 # downloaded datasets, extracted images, model caches, and SQLite files.
 !notebooks/ndp_workspace/data/
 notebooks/ndp_workspace/data/*
 !notebooks/ndp_workspace/data/edge_v1_benchmarks.npz
 !notebooks/ndp_workspace/data/edge_v2_benchmarks.npz
+!notebooks/ndp_workspace/data/edge_v3_benchmarks.npz
